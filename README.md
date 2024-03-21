@@ -6,17 +6,4 @@
 
 
 
-<table align="center">
-  <tr>
-    <td>
-      <picture>
-        <img alt="LINAR Logo" src="imagenes/stand.jpg" width="350">
-      </picture>
-    </td>
-    <td>
-      <picture>
-        <img alt="UdeSA Logo" src="imagenes/look.jpg" width="350">
-      </picture>
-    </td>    
-  </tr>
-</table>
+![Linar](imagenes/dog.png)
