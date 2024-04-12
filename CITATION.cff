@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Casiraghi"
+  given-names: "Tadeo"
+- family-names: "Torre"
+  given-names: "Gabriel"
+- family-names: "Bunge"
+  given-names: "Roberto"
+- family-names: "Mas"
+  given-names: "Ignacio"
+title: "dyna1-quadruped"
+version: 1.0.0
+date-released: 2024-03-27
+url: "https://github.com/udesa-ai/dyna1-quadruped"
