@@ -4,7 +4,7 @@
 [![english](https://img.shields.io/badge/language-english-red)](https://github.com/udesa-ai/dyna1-quadruped/blob/readme/README.en.md)
 
 
-<h1 align="center">Dyna1</h3>
+<h1 align="center">Dyna1 (Página en construcción)</h3>
 <h3 align="center">Plataforma cuadrúpeda para evaluación de algorítmos de locomoción autónom</h3>
 
 <p align="center">
