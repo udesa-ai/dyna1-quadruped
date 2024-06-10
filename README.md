@@ -21,12 +21,12 @@
 
 ## Hardware
 
-En la carpeta de hardware se pueden encontrar:
+Los modelos 3d del robot pueden encontrarse en el siguiente link de drive: [LINK](https://drive.google.com/drive/folders/1FCLbqZc1CY9Qmqhhmpl-5FUQIIOlaMu-?usp=sharing).
+En la carpeta se pueden encontrar los modelos en formato:
+- Fusion 360 (.f3d)
+- Step (.stp)
 
-- Modelos 3D del diseño del cuardúpedo en formato:
-  - Fusion 360 (.f3d)
-  - Step (.stp)
-- Listado de componentes (BOM)
+También podrán encontrar el listado de componentes en la carpeta de Hardware de este repositorio.
 
 ## Software
 
