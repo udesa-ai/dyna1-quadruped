@@ -22,6 +22,7 @@
 ## Hardware
 
 Los modelos 3d del robot pueden encontrarse en el siguiente link de drive: [LINK](https://drive.google.com/drive/folders/1FCLbqZc1CY9Qmqhhmpl-5FUQIIOlaMu-?usp=sharing).
+
 En la carpeta se pueden encontrar los modelos en formato:
 - Fusion 360 (.f3d)
 - Step (.stp)
