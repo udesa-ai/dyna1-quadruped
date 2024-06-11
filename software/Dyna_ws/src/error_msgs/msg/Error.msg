@@ -1,0 +1,2 @@
+int16 encoder_error
+int16 motor_error

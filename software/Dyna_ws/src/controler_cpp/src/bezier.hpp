@@ -19,7 +19,7 @@ class BezierGait {
 public:
     BezierGait();
 
-    BezierGait(std::array<float, 4> dSref, std::array<float, 4> dSref_end, float dt, float Tswing_ref);
+    BezierGait(std::array<float, 4> dSref, std::array<float, 4> dSref_end, float dt, float Tswing_ref, float Lref = 0.08);
 
     void reset();
     
@@ -77,7 +77,8 @@ private:
     uint8_t StanceSwing_;
     float SwRef;
     float Stref;
-    
+    float Lref;
+
     uint8_t ref_idx;
     std::array<float, 4> Phases;
     uint16_t binomial_11_values[12];

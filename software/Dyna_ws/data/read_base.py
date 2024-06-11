@@ -6,6 +6,7 @@ import os
 import statistics
 
 all_in_one = False
+walking = False
 get_this = ["frfoot"]
 
 max_current = 50
@@ -179,7 +180,7 @@ if cu:
     axes = list(axes.flat)
 
     for name in allofthem:
-        axes[leggo].plot(currents['time_start'], currents[name], label = name[2:])
+        axes[leggo].scatter(currents['time_start'], currents[name], label = name[2:])
         pasado = [None if abs(curr) < 0.98*max_current else curr for curr in currents[name]]
         axes[leggo].scatter(currents['time_start'], pasado, color = 'red')
         if 'foot' in name:
@@ -204,7 +205,7 @@ if cu:
 
 ############# RMS ##############
 
-if 'motion' in command:
+if 'motion' in command and walking:
     dict_rms = {}
     timestamps = []
     flag = False

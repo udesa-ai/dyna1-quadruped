@@ -10,10 +10,11 @@
 #include "teleop_msgs/msg/joy_buttons.hpp"
 #include "custom_sensor_msgs/msg/im_udata.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "error_msgs/msg/error.hpp"
 #include <chrono>
 #include "trajectories.hpp"
 #include <algorithm>
-#include<cmath>
+#include <cmath>
 
 class RealInterface : public rclcpp::Node {
 public:
@@ -27,8 +28,10 @@ public:
     MatrixJoint get_xyz();
     void move();
     void publishall(MatrixJoint angles);
+    void error_update(error_msgs::msg::Error::SharedPtr data);
 
 private:
+    uint8_t ERROR_STATE = 0;
     float MAX_CURRENT;
     float STEPLENGTH_SCALE;
     float Z_SCALE_CTRL;
@@ -77,6 +80,7 @@ private:
     bool stood;
     bool descend;
     rclcpp::Subscription<joint_msgs::msg::OdriveData>::SharedPtr subscription_joint_data;
+    rclcpp::Subscription<error_msgs::msg::Error>::SharedPtr errors_data;
     rclcpp::Subscription<custom_sensor_msgs::msg::IMUdata>::SharedPtr sub_imu;
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr ja_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr motor_state;

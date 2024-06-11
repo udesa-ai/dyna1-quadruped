@@ -29,6 +29,9 @@ class StateMachine : public rclcpp::Node {
         void estop_callback(const std_msgs::msg::Bool::SharedPtr estop);
     
     private:
+
+        double filter(double value, double previous);
+
         enum Motion {Go, Stop};
         enum Movement {Stepping, Viewing};
 
@@ -50,6 +53,8 @@ class StateMachine : public rclcpp::Node {
         };
         
         SpotCommand cmd;
+
+        double alpha;
 
         bool teleop_flag;
         bool motion_flag;

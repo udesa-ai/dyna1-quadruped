@@ -2,8 +2,8 @@
 
 BezierGait::BezierGait() {}
 
-BezierGait::BezierGait(std::array<float, 4> dSref, std::array<float, 4> dSref_end, float dt, float Tswing_ref)
-    : dSref(dSref), dSref_end(dSref_end), dt(dt), Tswing_ref(Tswing_ref)
+BezierGait::BezierGait(std::array<float, 4> dSref, std::array<float, 4> dSref_end, float dt, float Tswing_ref, float Lref)
+    : dSref(dSref), dSref_end(dSref_end), dt(dt), Tswing_ref(Tswing_ref), Lref(Lref)
     {
         binomial_11_values[0] = 1;
         binomial_11_values[1] = 11;
@@ -103,12 +103,16 @@ void BezierGait::GetPhase(uint8_t index, float Tstance, float Tswing, float* Pha
 float BezierGait::Get_ti(uint8_t index, float Tstride)
 {
     float division = (time_since_last_TD + dSref[index] * Tstride)/Tstride;
+    if (index == 0 && division >= 0.98)
+    {
+        TD_time = time;
+        SwRef = 0.0f;
+    }
     return (division - std::floor(division))*Tstride;
 }
 
 void BezierGait::Increment(float dt, float Tstride, float Tswing)
-{
-    CheckTouchDown();    
+{   
     time += dt;
     time_since_last_TD = time - TD_time;
 
@@ -118,16 +122,12 @@ void BezierGait::Increment(float dt, float Tstride, float Tswing)
         TD_time = 0.0f;
         SwRef = 0.0f;
     }
+    else if (time_since_last_TD < 0.0f)
+    {
+        time_since_last_TD = 0.0f;
+    }
 }
     
-void BezierGait::CheckTouchDown()
-{
-    if (SwRef >= 0.99) {
-        TD_time = time;
-        SwRef = 0.0f;
-    }
-        
-}
 
 float BezierGait::BernSteinPoly(float t, uint8_t k, float point)
 {
@@ -321,14 +321,16 @@ Eigen::Vector3f BezierGait::GetFootStep(float L, float LateralFraction, float Ya
     return empty;
 }
 
+
 TransfDict BezierGait::GenerateTrajectory(float L, float LateralFraction, float YawRate,
                                 float vel, TransfDict T_bf_, float clearance_height,
                                 float penetration_depth, float dt)
 {
 
     float Tstance = 0;
-    if (vel != 0.0f){
-        Tstance = 2.0f * fabs(L) / fabs(vel);
+    if (vel != 0.0f && L != 0.0f){
+        Tstance = 2.0f * fabs(Lref) / fabs(vel);
+        vel = 2.0f * L / Tstance;
     } else {
         Tstance = 0.0f;
         L = 0.0f;

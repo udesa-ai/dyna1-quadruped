@@ -10,6 +10,8 @@ StateMachine::StateMachine(): Node("state_machine")
     double frequency = 5;
     timeout = 1.0;
 
+    alpha = 0.1;
+
     this->declare_parameter("frequency", frequency);
     frequency = this->get_parameter("frequency").as_double();
 
@@ -190,10 +192,10 @@ void StateMachine::update_command(const double & vx, const double & vy, const do
         if (cmd.movement == Stepping)
         {
             // Stepping Mode, use commands as vx, vy, rate, Z
-            cmd.x_velocity = vx;
-            cmd.y_velocity = vy;
-            cmd.rate = w;
-            cmd.z = z;
+            cmd.x_velocity = filter(vx, cmd.x_velocity);
+            cmd.y_velocity = filter(vy, cmd.y_velocity);
+            cmd.rate = filter(w, cmd.rate);
+            cmd.z = filter(z, cmd.z);
             cmd.roll = 0.0;
             cmd.pitch = 0.0;
             cmd.yaw = 0.0;
@@ -206,10 +208,10 @@ void StateMachine::update_command(const double & vx, const double & vy, const do
             cmd.x_velocity = 0.0;
             cmd.y_velocity = 0.0;
             cmd.rate = 0.0;
-            cmd.roll = vy;
-            cmd.pitch = vx;
-            cmd.yaw = w;
-            cmd.z = z;
+            cmd.roll = filter(vy, cmd.roll);
+            cmd.pitch = filter(vx, cmd.pitch);
+            cmd.yaw = filter(w, cmd.yaw);
+            cmd.z = filter(z, cmd.z);
             cmd.faster = 0.0;
             cmd.slower = 0.0;
         }
@@ -259,6 +261,11 @@ void StateMachine::switch_movement()
             cmd.motion = Stop;
         }
     }
+}
+
+double StateMachine::filter(double value, double previous)
+{
+    return alpha * value + (1-alpha)*previous;
 }
 
 int main(int argc, char * argv[])

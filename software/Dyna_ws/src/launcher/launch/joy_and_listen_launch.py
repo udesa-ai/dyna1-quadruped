@@ -60,6 +60,6 @@ def generate_launch_description():
         bag,
         joycon,
         # control,
-        # state_machine,
-        # teleoperation,
+        state_machine,
+        teleoperation,
         ])

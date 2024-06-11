@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(controler_cpp)
+project(error_msgs)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,12 +7,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(joint_msgs REQUIRED)
-find_package(teleop_msgs REQUIRED)
-find_package(custom_sensor_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(error_msgs REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -26,24 +24,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-
-add_executable(interface src/dyna_real_interface.cpp src/algebra.cpp src/bezier.cpp src/leg_kinematics.cpp src/quad_kinematics.cpp src/trajectories.cpp)
-ament_target_dependencies(interface rclcpp joint_msgs teleop_msgs std_msgs custom_sensor_msgs error_msgs)
-
-install(TARGETS
-  interface
-  DESTINATION lib/${PROJECT_NAME})
-
-# Install launch files.
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
-)
-
-# Install config files.
-install(DIRECTORY
-  config
-  DESTINATION share/${PROJECT_NAME}
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Error.msg"
 )
 
 ament_package()

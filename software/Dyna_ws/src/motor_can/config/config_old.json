@@ -4,21 +4,21 @@
         "motor0": {
             "motorN": 0,
             "axisID": 0,
-            "iOffset": -0.7781874978542329,
+            "iOffset": -0.7305585736036302,
             "direction": -1,
             "calibration_angle": 35.6
         },
         "motor1": {
             "motorN": 0,
             "axisID": 1,
-            "iOffset": 0.9250001764297486,
+            "iOffset": 1.1178124403953553,
             "direction": -1,
             "calibration_angle": -71.9
         },
         "motor2": {
             "motorN": 1,
             "axisID": 2,
-            "iOffset": -3.5598085719347,
+            "iOffset": -3.5594999837875365,
             "direction": -1,
             "calibration_angle": 150.2
         }
@@ -28,21 +28,21 @@
         "motor0": {
             "motorN": 1,
             "axisID": 3,
-            "iOffset": -0.05593751430511462,
+            "iOffset": -0.02193747520446765,
             "direction": -1,
             "calibration_angle": -35.6
         },
         "motor1": {
             "motorN": 0,
             "axisID": 4,
-            "iOffset": 1.7233085861802102,
+            "iOffset": 1.721308589577675,
             "direction": 1,
             "calibration_angle": -71.9
         },
         "motor2": {
             "motorN": 1,
             "axisID": 5,
-            "iOffset": -3.635941390991211,
+            "iOffset": -3.6328124824166297,
             "direction": 1,
             "calibration_angle": 150.2
         }

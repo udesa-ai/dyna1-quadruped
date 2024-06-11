@@ -75,6 +75,13 @@ def generate_launch_description():
     #     )
     # )
 
+    safety = Node(
+            package='safety',
+            namespace='',
+            executable='precautions',
+            name='Precautions',
+            parameters=[{'use_sim_time': use_sim_time}],
+            output="screen")
     
     return LaunchDescription([
         MAX_CURRENT_launch_arg,
@@ -82,9 +89,9 @@ def generate_launch_description():
         imu,
         motores,
         can_bridge,
-        teleoperation,
-        state_machine,
+        # teleoperation,
+        # state_machine,
         control,
         # bag,
         # imu_translator
-        ])
+        safety])

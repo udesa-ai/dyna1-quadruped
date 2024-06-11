@@ -139,9 +139,9 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     this->declare_parameter("dt", 1.0);
     // Phase Lag Per Leg: FL, FR, BL, BR
     std::array<float, 4> dSref = {0.0f, 0.5f, 0.5f, 0.0f};
-    std::array<float, 4> dSref_end = {0.7f, 0.625f, 0.625f, 0.625f};
+    std::array<float, 4> dSref_end = {0.0f, 0.0f, 0.0f, 0.0f};
     // std::array<float, 4> dSref = {0.0f, 0.5f, 0.5f, 0.0f};
-    bzg = BezierGait(dSref, dSref_end, (float) this->get_parameter("dt").as_double(), BaseSwingPeriod);
+    bzg = BezierGait(dSref, dSref_end, (float) this->get_parameter("dt").as_double(), BaseSwingPeriod, STEPLENGTH_SCALE);
 
     
     /* ############## SUBSCRIBERS ############## */
@@ -170,6 +170,9 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     /* Subscription in charge of receiving new data */
     subscription_joint_data = this->create_subscription<joint_msgs::msg::OdriveData>("joint_data",
     10,std::bind(&RealInterface::update_data, this, _1), options);
+
+    errors_data = this->create_subscription<error_msgs::msg::Error>("error_state",
+    10,std::bind(&RealInterface::error_update, this, _1), options);
 
     sub_imu = this->create_subscription<custom_sensor_msgs::msg::IMUdata>("IMU",
     10,std::bind(&RealInterface::imu_cb, this, _1));
@@ -200,6 +203,20 @@ void RealInterface::imu_cb(const custom_sensor_msgs::msg::IMUdata::SharedPtr dat
     imu[5] = data->acc_x;
     imu[6] = data->acc_y;
     imu[7] = (data->acc_z) - 9.81;
+}
+
+void RealInterface::error_update(error_msgs::msg::Error::SharedPtr data)
+{
+    if (data->motor_error != 0)
+    {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Motor Error Detected, Shuting down");
+        ERROR_STATE = 1;
+        std_msgs::msg::Bool msg;
+        msg.data = false;
+        motor_states = 0;
+        motor_state->publish(msg);
+    }
+
 }
 
 void RealInterface::update_data(joint_msgs::msg::OdriveData::SharedPtr data)
@@ -242,50 +259,54 @@ void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
     jb.right_bump = data->right_bump;
     jb.start_b = data->start_b;
 
-    if (data->left_bump && jbreleased){
-        std_msgs::msg::Bool msg;
-        if (motor_states == 0){
-            msg.data = true;
-            motor_states = 1;
-        } else {
-            msg.data = false;
-            motor_states = 0;
+    if (ERROR_STATE == 0)
+    {
+        if (data->left_bump && jbreleased){
+            std_msgs::msg::Bool msg;
+            if (motor_states == 0){
+                msg.data = true;
+                motor_states = 1;
+            } else {
+                msg.data = false;
+                motor_states = 0;
+            }
+            motor_state->publish(msg);
+            jbreleased = false;
         }
-        motor_state->publish(msg);
-        jbreleased = false;
-    }
-    if (!data->left_bump){
-        jbreleased = true;
+        if (!data->left_bump){
+            jbreleased = true;
+        }
+        
+        if (data->start_b && sbreleased && !start_movement)
+        {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Movement started!");
+            start_movement = true;
+            sbreleased = false;
+            MatrixJoint xyz = get_xyz();
+            stood = true;
+
+            uint8_t index = 0;
+            for (auto& pair : T_bh) {
+                Eigen::Matrix4f foot = pair.second;
+                
+                foot.block(0,3,3,1) += xyz.block(index,0,1,3).transpose();
+                pair.second = foot;
+                adder.block(index,0,1,3) = desired[index].transpose() - xyz.block(index,0,1,3);
+                index++;
+            }
+
+            upt0 = this->get_clock()->now();
+        } else if (data->start_b && sbreleased && !standing && stood)
+        {
+            descend = true;
+            upt0 = this->get_clock()->now();
+        }
+
+        if (!data->start_b) {
+            sbreleased = true;
+        }
     }
     
-    if (data->start_b && sbreleased && !start_movement)
-    {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Movement started!");
-        start_movement = true;
-        sbreleased = false;
-        MatrixJoint xyz = get_xyz();
-        stood = true;
-
-        uint8_t index = 0;
-        for (auto& pair : T_bh) {
-            Eigen::Matrix4f foot = pair.second;
-            
-            foot.block(0,3,3,1) += xyz.block(index,0,1,3).transpose();
-            pair.second = foot;
-            adder.block(index,0,1,3) = desired[index].transpose() - xyz.block(index,0,1,3);
-            index++;
-        }
-
-        upt0 = this->get_clock()->now();
-    } else if (data->start_b && sbreleased && !standing && stood)
-    {
-        descend = true;
-        upt0 = this->get_clock()->now();
-    }
-
-    if (!data->start_b) {
-        sbreleased = true;
-    }
 }
 
 void RealInterface::set_current(uint8_t max_current){
@@ -307,61 +328,66 @@ void RealInterface::set_current(uint8_t max_current){
 }
     
 void RealInterface::control(){
-    if (!config_done) {
-        if (!current_set) {
-            set_current(MAX_CURRENT);
-            current_set = true;
-        }
-        if (readflag_data && current_set) {
-            config_done = true;
-        }
-    } else if (start_movement) {
-        rclcpp::Time tnow;
-        if (standing){
-            tnow = this->get_clock()->now();
-            rclcpp::Duration duration = tnow - upt0;
-            if (duration.seconds() > uptime) {
-                standing = false;
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Done Standing");
-            } else {
-                rclcpp::Duration tmove = tnow - upt0;
-                TransfDict T_bh_command = T_bh;
-                uint8_t index = 0;
-                for (auto& pair : T_bh_command) {
-                    Eigen::Matrix4f foot = pair.second;
-                    foot.block(0,3,3,1) += adder.block(index++,0,1,3).transpose()*traj.get_value(tmove.seconds()/uptime);
-                    pair.second = foot;
-                }
-
-                MatrixJoint ja = quadKine.IK({0,0,0}, {-com_offset,0,0}, T_bh_command);
-
-                publishall(ja);
+    if (ERROR_STATE == 0)
+    {
+        if (!config_done) {
+            if (!current_set) {
+                set_current(MAX_CURRENT);
+                current_set = true;
             }
-        } else if (descend) {
-            tnow = this->get_clock()->now();
-            rclcpp::Duration duration = tnow - upt0;
-            if (duration.seconds() > uptime) {
-                std_msgs::msg::Bool msg;
-                msg.data = false;
-                motor_states = 0;
-                motor_state->publish(msg);
-                start_movement = false;
-            } else {
-                TransfDict T_bh_command = T_bh;
-                uint8_t index = 0;
-                for (auto& pair : T_bh_command) {
-                    Eigen::Matrix4f foot = pair.second;
-                    
-                    foot.block(0,3,3,1) += adder.block(index++,0,1,3).transpose()*(1-traj.get_value(duration.seconds()/uptime));
-                    pair.second = foot;
-                }
-                MatrixJoint ja = quadKine.IK({0,0,0}, {-com_offset,0,0}, T_bh_command);
-                publishall(ja);
+            if (readflag_data && current_set) {
+                config_done = true;
             }
-        } else {
-            move();
+        } else if (start_movement) {
+            rclcpp::Time tnow;
+            if (standing){
+                tnow = this->get_clock()->now();
+                rclcpp::Duration duration = tnow - upt0;
+                if (duration.seconds() > uptime) {
+                    standing = false;
+                    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Done Standing");
+                } else {
+                    rclcpp::Duration tmove = tnow - upt0;
+                    TransfDict T_bh_command = T_bh;
+                    uint8_t index = 0;
+                    for (auto& pair : T_bh_command) {
+                        Eigen::Matrix4f foot = pair.second;
+                        foot.block(0,3,3,1) += adder.block(index++,0,1,3).transpose()*traj.get_value(tmove.seconds()/uptime);
+                        pair.second = foot;
+                    }
+
+                    MatrixJoint ja = quadKine.IK({0,0,0}, {-com_offset,0,0}, T_bh_command);
+
+                    publishall(ja);
+                }
+            } else if (descend) {
+                tnow = this->get_clock()->now();
+                rclcpp::Duration duration = tnow - upt0;
+                if (duration.seconds() > uptime) {
+                    std_msgs::msg::Bool msg;
+                    msg.data = false;
+                    motor_states = 0;
+                    motor_state->publish(msg);
+                    start_movement = false;
+                } else {
+                    TransfDict T_bh_command = T_bh;
+                    uint8_t index = 0;
+                    for (auto& pair : T_bh_command) {
+                        Eigen::Matrix4f foot = pair.second;
+                        
+                        foot.block(0,3,3,1) += adder.block(index++,0,1,3).transpose()*(1-traj.get_value(duration.seconds()/uptime));
+                        pair.second = foot;
+                    }
+                    MatrixJoint ja = quadKine.IK({0,0,0}, {-com_offset,0,0}, T_bh_command);
+                    publishall(ja);
+                }
+            } else {
+                move();
+            }
         }
     }
+    
+    
 }
 
 MatrixJoint RealInterface::get_xyz()

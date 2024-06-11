@@ -20,13 +20,14 @@
     # Stance Height
     height: 0.32 # 0.20
     # Adjust for balanced walk
-    com_offset: -0.03
+    com_offset: -0.05
+  
 
     # Time Step
     dt: 0.0125
 
     # Swing Period (lower is faster)
-    Tswing: 0.22  # 0.2
+    Tswing: 0.18  # 0.2
     SwingPeriod_LIMITS: [0.1, 0.35]
 
     # Step Velocity (Using very low value as my main form of speed control is swing period)
