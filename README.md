@@ -27,8 +27,10 @@ En la carpeta se pueden encontrar los modelos en formato:
 - Fusion 360 (.f3d)
 - Step (.stp)
 
-También podrán encontrar el listado de componentes en la carpeta de Hardware de este repositorio.
+También podrán encontrar el listado de componentes en la carpeta de Hardware de este repositorio, como a su vez el instructivo de construcción y armado del robót.
 
 ## Software
 
-TODO
+Para utilizar los códigos de control del cuadrúpedo de Python tendrán que instalar la libreria de python de [robot-utils](https://i1.rgstatic.net/ii/profile.image/11431281122295413-1677261159861_Q512/Gabriel-Torre.jpg)
+
+La carpeta de Software contiene todas las clases de Python necesarias para el proceso de calibración e iniciación del cuadrúpedo, los paquetes de ROS2, y las instrucciones de uso.
