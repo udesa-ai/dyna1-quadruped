@@ -31,7 +31,7 @@
     SwingPeriod_LIMITS: [0.1, 0.35]
 
     # Step Velocity (Using very low value as my main form of speed control is swing period)
-    BaseStepVelocity: 0.25
+    BaseStepVelocity: 0.5
 
     # Foot Clearance Height
     BaseClearanceHeight: 0.05  # 0.035
