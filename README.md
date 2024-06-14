@@ -4,7 +4,11 @@
 [![english](https://img.shields.io/badge/language-english-red)](https://github.com/udesa-ai/dyna1-quadruped/blob/readme/README.en.md)
 
 
+<<<<<<< HEAD
 <h1 align="center">Dyna1 (Página en construcción)</h3>
+=======
+<h1 align="center">Dyna1 (pagina en construcción)</h3>
+>>>>>>> work-in-progess
 <h3 align="center">Plataforma cuadrúpeda para evaluación de algorítmos de locomoción autónom</h3>
 
 <p align="center">
@@ -27,8 +31,8 @@ En la carpeta se pueden encontrar los modelos en formato:
 - Fusion 360 (.f3d)
 - Step (.stp)
 
-También podrán encontrar el listado de componentes en la carpeta de Hardware de este repositorio.
+También podrán encontrar el listado de componentes en la carpeta de Hardware de este repositorio, como a su vez el instructivo de construcción y armado del robót.
 
 ## Software
 
-TODO
+La carpeta de Software contiene todas las clases de Python necesarias para el proceso de calibración e iniciación del cuadrúpedo, los paquetes de ROS2, y las instrucciones de uso.
