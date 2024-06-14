@@ -56,6 +56,8 @@ Para facilitar la instalación del imán puede imprimir la pieza cilíndrica. Se
   <img src="imagenes/vid5.gif" width="400"/>
 </p>
 
+Ahora que ya colocó el imán se recomienda calibrar el Odrive y el motor corriendo las instrucciónes [oficiales](https://docs.odriverobotics.com/v/0.5.4/getting-started.html). No se olvide de configurar el index de CAN de los ejes del Odrive para poder comunicarse posteriormente por el bus CAN. El número de index de cada motor puede encontrarlo en el archivo "config.json".
+
 #### Paso 6
 
 Se recomienda colocar la polea central ya armada. Para eso agreuge los rodamientos a cada lado y comprima con el bulon M3. Luego inserte el rodamiento dentro del módulo. Asegurese de colocar correctamente la primera y segunda correa. Sostenga a la polea con los alojamientos. Para tensionar la correa puede rotar los alojamientos en las orientaciones marcadas. Cuanto mayor el número que apunta al motor más tensionada estará la correa. Para nuestro robot la primer polea se encuentra en posición 1 y la segunda en posición 2.

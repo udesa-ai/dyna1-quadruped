@@ -31,6 +31,4 @@ También podrán encontrar el listado de componentes en la carpeta de Hardware d
 
 ## Software
 
-Para utilizar los códigos de control del cuadrúpedo de Python tendrán que instalar la libreria de python de [robot-utils](https://udesa.edu.ar/linar)
-
 La carpeta de Software contiene todas las clases de Python necesarias para el proceso de calibración e iniciación del cuadrúpedo, los paquetes de ROS2, y las instrucciones de uso.
