@@ -1,4 +1,4 @@
-from robot_utils.quadruped.kinematics.quad_kinematics import QuadModel
+from classes.quad_kinematics import QuadModel
 from classes.motors import Motors
 import numpy as np
 

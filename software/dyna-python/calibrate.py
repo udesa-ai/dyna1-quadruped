@@ -1,5 +1,4 @@
 from classes.quadruped import Dyna
-import time
 import argparse
 
 parser = argparse.ArgumentParser(description="Which Leg to calibrate")
