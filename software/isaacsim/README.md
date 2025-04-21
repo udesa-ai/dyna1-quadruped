@@ -20,6 +20,7 @@ Editar el archivo **IsaacLab/docker/docker-compose.yaml** agregarle las siguient
     - type: bind
     source: /home/$USER/IsaacLabExtensionTemplate
     target: /workspace/IsaacLabExtensionTemplate
+.
 
 	type: bind
 Indica que el volumen es un montaje tipo “bind”, es decir, se vincula directamente un directorio del host al contenedor.
