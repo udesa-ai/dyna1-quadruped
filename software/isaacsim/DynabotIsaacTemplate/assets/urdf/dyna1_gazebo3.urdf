@@ -1,0 +1,465 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="dyna1">
+  <material name="yellow">
+    <color rgba="0.1 0.45 1 1" />
+  </material>
+  <material name="black">
+    <color rgba="0.1 0.1 0.1 1" />
+  </material>
+  <material name="grey">
+    <color rgba="0.6 0.6 0.6 1" />
+  </material>
+  <material name="white">
+    <color rgba="1 1 1 1" />
+  </material>
+	<material name="orange">
+		<color rgba="1 0.35 0.05 1" />
+	</material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/Body.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="grey" />
+      <origin rpy="0 0 0" xyz="0 0 0" />  
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.499 0.247 0.186" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="-0.016533 0 0.029372" />
+    </collision>
+    <inertial>
+      <mass value="3.671" />
+			<origin rpy="0 0 0" xyz="0.00545 0.00008 0.008719" />
+      <inertia ixx="0.0044756197221465545" ixy="-6.4478343775538e-05" ixz="0.0006810133478616182" iyy="0.014573685644238627" iyz="-3.1703622991010628e-06" izz="0.016050122582402616" />
+    </inertial>
+  </link>
+
+
+  <link name="front_left_shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/shoulder.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="orange" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.211013 0.118076" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 -0.080206 0.042257" />
+    </collision>
+    <inertial>
+      <mass value="0.505084" />
+			<origin rpy="0 0 0" xyz="-0.000225 -0.096893 0.058205" />
+      <inertia ixx="0.0033182599330012436" ixy="-1.2572166213936695e-07" ixz="1.2195991161866144e-07" iyy="0.0008998503219266498" iyz="0.00046863492013209687" izz="0.002803494072273127" />
+    </inertial>
+  </link>
+
+
+  <link name="front_left_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/arm1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="white" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.228758 0.08244" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.052 0.0944 0.016025" />
+    </collision>
+    <inertial>
+      <mass value="0.500063" />
+			<origin rpy="0 0 0" xyz="0.049769 0.079064 0.017355" />
+      <inertia ixx="0.0031636013862253354" ixy="-0.00017710808438136795" ixz="-2.4696488242481447e-05" iyy="0.0007753023119086995" iyz="0.00024176953703833315" izz="0.0029536278428917953" />
+    </inertial>
+  </link>
+
+  <link name="front_left_hand_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/foot1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="yellow" />
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.138" radius="0.0101" />
+      </geometry>
+      <origin rpy="0 1.570796 0" xyz="0.100811 -0.036862 0" />
+    </collision>
+    <collision>
+      <geometry>
+        <sphere radius="0.020" />
+      </geometry>
+      <origin rpy="0 0 1.570796" xyz="0.171811 -0.036862 0" />
+       <contact_coefficients mu="10.1"/>
+    </collision>
+    <inertial>
+      <mass value="0.066814" />
+			<origin rpy="0 0 0" xyz="0.07927 -0.025916 -0.001911" />
+      <inertia ixx="0.00037212859580327477" ixy="0.0008592076510910888" ixz="-0.00015145029484838507" iyy="0.005530278085431197" iyz="4.928158769120244e-05" izz="0.005795192624300297" />
+    </inertial>
+  </link>
+
+  <joint name="base_to_front_left_shoulder" type="revolute">
+    <parent link="base_link" />
+    <child link="front_left_shoulder_link" />
+    <axis xyz="0 -1 0" />
+    <origin rpy="-1.57079632679 -1.57079632679 0" xyz="0.2352235 0.0985 0" />
+    <limit effort="100.0" lower="-0.6051" upper="0.6051" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="front_left_shoulder_to_arm" type="revolute">
+    <parent link="front_left_shoulder_link" />
+    <child link="front_left_arm_link" />
+    <axis xyz="0 0 -1" />
+    <origin rpy="0 0 1.84649081579" xyz="0 0 0.0435" />
+    <limit effort="100.0" lower="-1.3135" upper="2.4337" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="front_left_arm_to_hand" type="revolute">
+    <parent link="front_left_arm_link" />
+    <child link="front_left_hand_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="3.14159265359 0 1.103929191" xyz="0.0519 0.183458 0" />
+    <limit effort="100.0" lower="-0.8515" upper="2.6321" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <link name="front_right_shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/shoulder.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="orange" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.211013 0.118076" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 -0.080206 0.042257" />
+    </collision>
+    <inertial>
+      <mass value="0.505084" />
+			<origin rpy="0 0 0" xyz="-0.000225 -0.096893 0.058205" />
+      <inertia ixx="0.0033182599330012436" ixy="-1.2572166213936695e-07" ixz="1.2195991161866144e-07" iyy="0.0008998503219266498" iyz="0.00046863492013209687" izz="0.002803494072273127" />
+    </inertial>
+  </link>
+
+  <link name="front_right_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/arm2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="white" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.228758 0.08244" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="-0.052 0.0944 0.016025" />
+    </collision>
+    <inertial>
+      <mass value="0.500063" />
+			<origin rpy="0 0 0" xyz="-0.049769 0.079064 0.017355" />
+      <inertia ixx="0.0031636013862253354" ixy="0.00017700169778607893" ixz="2.4993450825196025e-05" iyy="0.0007753023119086995" iyz="0.00024176953703833315" izz="0.0029536278428917953" />
+    </inertial>
+  </link>
+
+  <link name="front_right_hand_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/foot2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="yellow" />
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.138" radius="0.0101" />
+      </geometry>
+      <origin rpy="0 1.570796 0" xyz="0.100811 -0.036862 0" />
+    </collision>
+    <collision>
+      <geometry>
+        <sphere radius="0.020" />
+      </geometry>
+      <origin rpy="0 0 1.570796" xyz="0.171811 -0.036862 0" />
+	 <contact_coefficients mu="10.1"/>
+    </collision>
+    <inertial>
+      <mass value="0.066814" />
+			<origin rpy="0 0 0" xyz="0.07927 -0.025916 0.001911" />
+      <inertia ixx="0.00037204178764929505" ixy="0.0008592151345526388" ixz="0.00015121830754033586" iyy="0.005530278085431197" iyz="-4.9208249768012696e-05" izz="0.005795192624300297" />
+    </inertial>
+  </link>
+
+  <joint name="base_to_front_right_shoulder" type="revolute">
+    <parent link="base_link" />
+    <child link="front_right_shoulder_link" />
+    <axis xyz="0 -1 0" />
+    <origin rpy="0 1.57079632679 -1.57079632679" xyz="0.2352235 -0.0985 0" />
+    <limit effort="100.0" lower="-0.6051" upper="0.6051" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="front_right_shoulder_to_arm" type="revolute">
+    <parent link="front_right_shoulder_link" />
+    <child link="front_right_arm_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="0 0 -1.84649081579" xyz="0 0 0.0435" />
+    <limit effort="100.0" lower="-1.3135" upper="2.4337" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="front_right_arm_to_hand" type="revolute">
+    <parent link="front_right_arm_link" />
+    <child link="front_right_hand_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="0 0 2.03766346259" xyz="-0.0519 0.183458 0" />
+    <limit effort="100.0" lower="-0.8515" upper="2.6321" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+
+
+
+
+  <link name="back_left_shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/shoulder.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="orange" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.211013 0.118076" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 -0.080206 0.042257" />
+    </collision>
+    <inertial>
+      <mass value="0.505084" />
+			<origin rpy="0 0 0" xyz="-0.000225 -0.096893 0.058205" />
+      <inertia ixx="0.0033182599330012436" ixy="-1.2572166213936695e-07" ixz="1.2195991161866144e-07" iyy="0.0008998503219266498" iyz="0.00046863492013209687" izz="0.002803494072273127" />
+    </inertial>
+  </link>
+
+  <link name="back_left_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/arm2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="white" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.228758 0.08244" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="-0.052 0.0944 0.016025" />
+    </collision>
+    <inertial>
+      <mass value="0.500063" />
+			<origin rpy="0 0 0" xyz="-0.049769 0.079064 0.017355" />
+      <inertia ixx="0.0031636013862253354" ixy="0.00017700169778607893" ixz="2.4993450825196025e-05" iyy="0.0007753023119086995" iyz="0.00024176953703833315" izz="0.0029536278428917953" />
+    </inertial>
+  </link>
+
+  <link name="back_left_hand_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/foot1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="yellow" />
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.138" radius="0.0101" />
+      </geometry>
+      <origin rpy="0 1.570796 0" xyz="0.100811 -0.036862 0" />
+    </collision>
+    <collision>
+      <geometry>
+        <sphere radius="0.020" />
+      </geometry>
+      <origin rpy="0 0 1.570796" xyz="0.171811 -0.036862 0" />
+       <contact_coefficients mu="10.1"/>
+    </collision>
+    <inertial>
+      <mass value="0.066814" />
+			<origin rpy="0 0 0" xyz="0.07927 -0.025916 0.001911" />
+      <inertia ixx="0.00037204178764929505" ixy="0.0008592151345526388" ixz="0.00015121830754033586" iyy="0.005530278085431197" iyz="-4.9208249768012696e-05" izz="0.005795192624300297" />
+    </inertial>
+  </link>
+
+  <joint name="base_to_back_left_shoulder" type="revolute">
+    <parent link="base_link" />
+    <child link="back_left_shoulder_link" />
+    <axis xyz="0 1 0" />
+    <origin rpy="0 1.57079632679 1.57079632679" xyz="-0.2352235 0.0985 0" />
+    <limit effort="100.0" lower="-0.6051" upper="0.6051" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="back_left_shoulder_to_arm" type="revolute">
+    <parent link="back_left_shoulder_link" />
+    <child link="back_left_arm_link" />
+    <axis xyz="0 0 -1" />
+    <origin rpy="0 0 -1.84649081579" xyz="0 0 0.0435" />
+    <limit effort="100.0" lower="-2.4337" upper="1.3135" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="back_left_arm_to_hand" type="revolute">
+    <parent link="back_left_arm_link" />
+    <child link="back_left_hand_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="3.14159265359 0 1.655318169" xyz="-0.0519 0.183458 0" />
+    <limit effort="100.0" lower="-0.30696" upper="3.17664" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+
+
+  <link name="back_right_shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/shoulder.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="orange" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.211013 0.118076" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 -0.080206 0.042257" />
+    </collision>
+    <inertial>
+      <mass value="0.505084" />
+			<origin rpy="0 0 0" xyz="-0.000225 -0.096893 0.058205" />
+      <inertia ixx="0.0033182599330012436" ixy="-1.2572166213936695e-07" ixz="1.2195991161866144e-07" iyy="0.0008998503219266498" iyz="0.00046863492013209687" izz="0.002803494072273127" />
+    </inertial>
+  </link>
+
+  <link name="back_right_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/arm1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="white" />
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.059 0.228758 0.08244" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.052 0.0944 0.016025" />
+    </collision>
+    <inertial>
+      <mass value="0.500063" />
+			<origin rpy="0 0 0" xyz="0.049769 0.079064 0.017355" />
+      <inertia ixx="0.0031636013862253354" ixy="-0.00017710808438136795" ixz="-2.4696488242481447e-05" iyy="0.0007753023119086995" iyz="0.00024176953703833315" izz="0.0029536278428917953" />
+    </inertial>
+  </link>
+
+  <link name="back_right_hand_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://stl/foot2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0" /> 
+      <material name="yellow" />
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.138" radius="0.0101" />
+      </geometry>
+      <origin rpy="0 1.570796 0" xyz="0.100811 -0.036862 0" />
+    </collision>
+    <collision>
+      <geometry>
+        <sphere radius="0.020" />
+      </geometry>
+      <origin rpy="0 0 1.570796" xyz="0.171811 -0.036862 0" />
+       <contact_coefficients mu="10.1"/>
+    </collision>
+    <inertial>
+      <mass value="0.066814" />
+			<origin rpy="0 0 0" xyz="0.07927 -0.025916 0.001911" />
+      <inertia ixx="0.00037204178764929505" ixy="0.0008592151345526388" ixz="0.00015121830754033586" iyy="0.005530278085431197" iyz="-4.9208249768012696e-05" izz="0.005795192624300297" />
+    </inertial>
+  </link>
+
+  <joint name="base_to_back_right_shoulder" type="revolute">
+    <parent link="base_link" />
+    <child link="back_right_shoulder_link" />
+    <axis xyz="0 1 0" />
+    <origin rpy="0 -1.57079632679 1.57079632679" xyz="-0.2352235 -0.0985 0" />
+    <limit effort="100.0" lower="-0.6051" upper="0.6051" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="back_right_shoulder_to_arm" type="revolute">
+    <parent link="back_right_shoulder_link" />
+    <child link="back_right_arm_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="0 0 1.84649081579" xyz="0 0 0.0435" />
+    <limit effort="100.0" lower="-2.4337" upper="1.3135" velocity="100" />
+    <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <joint name="back_right_arm_to_hand" type="revolute">
+    <parent link="back_right_arm_link" />
+    <child link="back_right_hand_link" />
+    <axis xyz="0 0 1" />
+    <origin rpy="0 0 1.48627448459" xyz="0.0519 0.183458 0" />
+    <limit effort="100.0" lower="-0.30696" upper="3.17664" velocity="100" />
+  i  <dynamics damping="0.0" friction="0" />
+  </joint>
+
+  <!-- Gazebo customization -->  
+  <gazebo reference="back_left_hand_link">
+    <kp>1000000.0</kp>        
+    <kd>100.0</kd>        
+    <mu1>0.8</mu1>        
+    <mu2>0.8</mu2>      
+  </gazebo>
+
+  <gazebo reference="back_right_hand_link">    
+    <kp>1000000.0</kp>    
+    <kd>100.0</kd>    
+    <mu1>0.8</mu1>    
+    <mu2>0.8</mu2>  
+  </gazebo>
+
+  <gazebo reference="front_right_hand_link">
+    <kp>1000000.0</kp>        
+    <kd>100.0</kd>        
+    <mu1>0.8</mu1>        
+    <mu2>0.8</mu2>      
+  </gazebo>
+
+  <gazebo reference="fron_left_hand_link">   
+    <kp>1000000.0</kp>        
+    <kd>100.0</kd>        
+    <mu1>0.8</mu1>        
+    <mu2>0.8</mu2>      
+  </gazebo>
+
+</robot>
