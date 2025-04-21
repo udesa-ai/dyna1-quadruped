@@ -64,7 +64,7 @@ Para hacer stream a otra PC (o estando desde docker a la pc host) se deberia cor
 
 Esto es por si se esta usando una PC para correr el entrenamiento y se quiere visualizar el output de la simulacion desde otra.
 
-Modificar la linea 68 de:
+Modificar la linea 68 de **IsaacLabExtensionTemplate/scripts/rsl_rl/train.py**:
 
     68:import ext_template.tasks  # noqa: F401
 
