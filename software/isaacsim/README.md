@@ -21,6 +21,17 @@ Editar el archivo **IsaacLab/docker/docker-compose.yaml** agregarle las siguient
     source: /home/$USER/IsaacLabExtensionTemplate
     target: /workspace/IsaacLabExtensionTemplate
 
+	type: bind
+Indica que el volumen es un montaje tipo “bind”, es decir, se vincula directamente un directorio del host al contenedor.
+
+	source: /home/$USER/IsaacLabExtensionTemplate
+Es la ruta en tu máquina local (host) que quieres montar. Aquí, $USER se reemplaza por tu nombre de usuario, y apunta a la carpeta del proyecto en tu home.
+
+	target: /workspace/IsaacLabExtensionTemplate
+Es la ruta dentro del contenedor donde ese mismo directorio aparecerá. Cualquier archivo o cambio en /workspace/IsaacLabExtensionTemplate dentro del contenedor afecta directamente al source en el host.
+
+
+
 Ejecutar el docker compose con el siguiente comando:
 
     ./container.sh start
@@ -46,7 +57,7 @@ Si falla el paso anterior es poque probablemente antes haya que actualizar pip a
 
     /workspace/isaaclab/_isaac_sim/kit/python/bin/python3 -m pip install --upgrade pip
 
-Si piensan hacer stream a otra PC se deberia correr este comando: 
+Para hacer stream a otra PC (o estando desde docker a la pc host) se deberia correr este comando: 
     
     export LIVESTREAM=2
 
