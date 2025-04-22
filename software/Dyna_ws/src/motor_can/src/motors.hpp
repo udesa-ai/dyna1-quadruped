@@ -11,7 +11,6 @@
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include <chrono>
-#include "can_msgs/msg/frame.hpp"
 #include "joint_msgs/msg/joints.hpp"
 #include "joint_msgs/msg/odrive_data.hpp" 
 #include "std_msgs/msg/bool.hpp"
@@ -21,7 +20,6 @@
 class Motors : public rclcpp::Node {
 public:
     Motors();
-    void publish_CAN(uint8_t axisid, uint8_t command_id, uint8_t* data, uint8_t rtr);
     void reboot_odrive(std::vector<std::string> selection = {"FRshoulder","FRarm","FLarm","BRshoulder","BRarm","BLarm"});
 
 
@@ -32,8 +30,6 @@ private:
     std::map<uint8_t, std::string> axisID;
     CanED canEncDec;
     std::string names[12];
-    rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr publisher_CAN;
-    rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr subscriber_CAN;
     rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
     rclcpp::Publisher<joint_msgs::msg::OdriveData>::SharedPtr publisher_odrive_data;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_state;
@@ -45,7 +41,6 @@ private:
 
 
     void publish_joints();
-    void reception(const can_msgs::msg::Frame::SharedPtr frame);
     void request(const joint_msgs::msg::Joints::SharedPtr joints);
     void disengage_all();
     void engage_all();

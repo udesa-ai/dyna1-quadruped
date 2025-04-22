@@ -13,11 +13,11 @@ Motors::Motors(): Node("brushless_motors")
     rclcpp::SubscriptionOptions options;
     options.callback_group = client_cb_group_;
 
-    publisher_CAN = this->create_publisher<can_msgs::msg::Frame>("CAN/can0/transmit",24);
-    subscriber_CAN = this->create_subscription<can_msgs::msg::Frame>("CAN/can0/receive",
-                                                        24,
-                                                        std::bind(&Motors::reception, this, _1),
-                                                        options);
+    // publisher_CAN = this->create_publisher<can_msgs::msg::Frame>("CAN/can0/transmit",24);
+    // subscriber_CAN = this->create_subscription<can_msgs::msg::Frame>("CAN/can0/receive",
+    //                                                    24,
+    //                                                    std::bind(&Motors::reception, this, _1),
+    //                                                    options);
 
     subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state",10,
     std::bind(&Motors::change_state, this, _1));
@@ -166,7 +166,7 @@ void Motors::disengage_all()
     for (uint8_t i = 0; i < 12 ; i++)
     {   
         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-        publish_CAN(axis, SEX_AXIS_STATE, data, 0);
+        //publish_CAN(axis, SEX_AXIS_STATE, data, 0);
     }
 }
 
@@ -178,7 +178,7 @@ void Motors::engage_all()
     for (uint8_t i = 0; i < 12 ; i++)
     {   
         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-        publish_CAN(axis, SEX_AXIS_STATE, data, 0);
+        //publish_CAN(axis, SEX_AXIS_STATE, data, 0);
     }
 }
 
@@ -228,50 +228,12 @@ void Motors::publish_joints()
     publisher_odrive_data->publish(joints);
 }
 
-void Motors::publish_CAN(uint8_t axisid, uint8_t command_id, uint8_t* data, uint8_t rtr)
-{
-    can_msgs::msg::Frame frame;
-
-    frame.id = static_cast<uint32_t>(axisid)<<5 | static_cast<uint32_t>(command_id);
-    frame.dlc = 8;
-
-    for (int i=0; i<8; i++)
-    {
-        frame.data[i] = data[i];
-    }
-
-    frame.rtr = rtr;
-
-    publisher_CAN->publish(frame);
-}
-
 void Motors::reboot_odrive(std::vector<std::string> selection)
 {
     uint8_t data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     for (std::string name : selection) {
         uint8_t axisid = brushless_motors.find(name)->second.get_axisID();
-        publish_CAN(axisid, REBOOT, data, 0);
-    }
-}
-
-
-void Motors::reception(const can_msgs::msg::Frame::SharedPtr frame)
-{   
-    uint8_t data[] = {0, 0, 0, 0, 0, 0, 0, 0};
-    for (uint8_t i = 0; i < 8; i++){
-        data[i] = frame->data[i];
-    }
-    uint8_t axis, command;
-    canEncDec.getAxisCommand(frame->id, &axis, &command);
-
-    if (command == GET_ENCODER_ESTIMATES) {
-        float values[2];
-        canEncDec.decode_float(data, values);
-        brushless_motors.find(axisID[axis])->second.update_estimates(values[0], values[1]);
-    } else if (command == GET_IQ) {
-        float values[2];
-        canEncDec.decode_float(data, values);
-        brushless_motors.find(axisID[axis])->second.update_current(values[1]);
+        //publish_CAN(axisid, REBOOT, data, 0);
     }
 }
 
@@ -296,7 +258,7 @@ void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
         float position = brushless_motors.find(names[i])->second.get_input_from_angle(angles[i]);
         uint8_t data[8];
         canEncDec.encode_position(position, data);
-        publish_CAN(axis, SET_INPUT_POS, data, 0);
+        //publish_CAN(axis, SET_INPUT_POS, data, 0);
     } 
 }
 
@@ -321,7 +283,7 @@ void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_cur
         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
         uint8_t data[8];
         canEncDec.encode_max_current(currents[i], data);
-        publish_CAN(axis, SET_LIMITS, data, 0);
+        //publish_CAN(axis, SET_LIMITS, data, 0);
     }    
 }
 

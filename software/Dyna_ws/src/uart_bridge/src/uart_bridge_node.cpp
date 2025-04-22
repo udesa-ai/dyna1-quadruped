@@ -1,0 +1,273 @@
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
+#include <memory>
+#include <queue>
+#include <sstream>
+#include <iomanip>
+#include <vector>
+#include <cstring>  // for memcpy
+
+using namespace std::placeholders;
+using boost::asio::serial_port_base;
+namespace asio = boost::asio;
+
+class UARTBridgeNode : public rclcpp::Node {
+public:
+    UARTBridgeNode()
+        : Node("uart_bridge_node"),
+          io_context_(),
+          serial_port_(io_context_),
+          read_buffer_{} {
+
+        publisher_ = this->create_publisher<std_msgs::msg::String>("uart_read", 10);
+        publisher_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
+
+
+        subscription_ = this->create_subscription<std_msgs::msg::String>(
+            "uart_write", 10,
+            std::bind(&UARTBridgeNode::uart_write_callback, this, _1)
+        );
+
+        std::string port_name = "/dev/ttyTHS1";
+        int baud_rate = 115200;
+
+        boost::system::error_code ec;
+        serial_port_.open(port_name, ec);
+        if (ec) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to open serial port: %s", ec.message().c_str());
+            return;
+        }
+
+        serial_port_.set_option(serial_port_base::baud_rate(baud_rate));
+        serial_port_.set_option(serial_port_base::character_size(8));
+        serial_port_.set_option(serial_port_base::parity(serial_port_base::parity::none));
+        serial_port_.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
+        serial_port_.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
+
+        do_async_read();
+
+        // Run boost::asio in a background thread
+        io_thread_ = std::thread([this]() { io_context_.run(); });
+    }
+
+    ~UARTBridgeNode() {
+        serial_port_.close();
+        io_context_.stop();
+        if (io_thread_.joinable())
+            io_thread_.join();
+    }
+
+private:
+    void do_async_read() {
+        serial_port_.async_read_some(
+            asio::buffer(read_buffer_, 1),
+            std::bind(&UARTBridgeNode::handle_read, this, _1, _2)
+        );
+    }
+
+    void handle_read(const boost::system::error_code& error, size_t bytes_transferred) {
+        if (!error && bytes_transferred > 0) {
+            input_buffer_.push_back(read_buffer_[0]);
+
+            // Try to find full frame
+            while (input_buffer_.size() >= 9) {  // Minimum frame size
+                // Look for sync header
+                auto it = std::search(input_buffer_.begin(), input_buffer_.end(), sync_.begin(), sync_.end());
+                if (it == input_buffer_.end()) {
+                    input_buffer_.clear();
+                    break;
+                }
+
+                std::stringstream ss;
+                for (unsigned char c : input_buffer_) {
+                    ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(c) << " ";
+                }
+
+                RCLCPP_INFO(this->get_logger(), "Input buffer (hex): %s", ss.str().c_str());
+
+                size_t start = std::distance(input_buffer_.begin(), it);
+                if (input_buffer_.size() < start + 9) {
+                    break; // Minimum full frame = 3 sync + 1 topic + 1 seq + 2 len + 2 CRC
+                }
+                
+                uint8_t topic_id = input_buffer_[start + 3];
+                uint8_t len_high = input_buffer_[start + 5];
+                uint8_t len_low  = input_buffer_[start + 6];
+                uint16_t payload_len = (len_high << 8) | len_low;
+                size_t frame_len = 3 + 1 + 1 + 2 + 2 + payload_len;  // sync + topic + seq + len + crc + payload
+
+                if (input_buffer_.size() < start + frame_len){
+                    break; // Wait for more data
+                }
+               
+
+                std::vector<uint8_t> frame(input_buffer_.begin() + start, input_buffer_.begin() + start + frame_len);
+                input_buffer_.erase(input_buffer_.begin(), input_buffer_.begin() + start + frame_len);
+
+                // CRC check
+                uint16_t received_crc = (frame[7] << 8) | frame[8];
+                uint16_t computed_crc = calculate_crc(frame.data() + 9, frame_len - 9);  // Exclude sync
+                if (received_crc != computed_crc) {
+                    RCLCPP_WARN(this->get_logger(), "CRC mismatch");
+                    continue;
+                }
+
+                // Extract and publish payload
+                const uint8_t* payload_ptr = reinterpret_cast<const uint8_t*>(&frame[9]);
+                size_t payload_length = frame.size() - 9;
+                handle_payload(topic_id, payload_ptr, payload_length);
+            }
+    
+            do_async_read();  // continue reading
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "Serial read error: %s", error.message().c_str());
+        }
+    }
+    
+
+    void handle_payload(uint8_t topic_id, const uint8_t* payload, size_t length){
+        switch (topic_id) {
+            case 1: {
+                // Topic 1: accel (xyz 4 bytes each), gyro (xyz 4 bytes each), pos (12 motors 4 bytes each), vel (12 motors 4 bytes each)
+                if (length != 8) {
+                    std::cout << "Invalid payload length for topic 1: " << length << std::endl;
+                    return;
+                }
+                std::vector<float> floats;
+                for (size_t i = 0; i < length; i += 4) {
+                    float value;
+                    std::memcpy(&value, payload + i, sizeof(float));
+                    floats.push_back(value);
+                    RCLCPP_INFO(this->get_logger(), "Value %zu: %f", i / 4, value);
+                }
+
+                // TODO: Handle the floats as needed
+                break;
+            }
+
+            // case 2: {
+            //     std_msgs::msg::String msg;
+            //     msg.data = payload;
+            //     publisher_->publish(msg);
+            //     RCLCPP_INFO(this->get_logger(), "Published payload: %s", msg.data.c_str());
+            // }
+            
+            default:
+                std::cout << "Unknown topic ID: " << static_cast<int>(topic_id) << std::endl;
+                break;
+        }
+    }
+
+
+    // Writing
+    void uart_write_callback(const std_msgs::msg::String::SharedPtr msg) {
+        const std::string &payload = msg->data;
+        uint16_t len = payload.size();
+
+        // Frame format
+        std::vector<uint8_t> frame;
+        frame.push_back('>');
+        frame.push_back('>');
+        frame.push_back('>');
+
+        uint8_t topic_id = 0x01;
+        frame.push_back(topic_id);
+
+        frame.push_back(seq_counter_++);  // sequence number
+
+        // Length
+        frame.push_back((len >> 8) & 0xFF);  // len_high
+        frame.push_back(len & 0xFF);        // len_low
+
+        // Placeholder for CRC
+        frame.push_back(0x00);  // CRC high
+        frame.push_back(0x00);  // CRC low
+
+        // Append payload
+        frame.insert(frame.end(), payload.begin(), payload.end());
+
+        // Compute CRC over topic_id to end of payload (not sync)
+        uint16_t crc = calculate_crc(frame.data() + 9, frame.size() - 9);
+        frame[7] = (crc >> 8) & 0xFF;
+        frame[8] = crc & 0xFF;
+
+        // Convert to string for sending
+        std::string frame_str(frame.begin(), frame.end());
+
+
+        bool write_in_progress = !this->write_queue_.empty();
+        this->write_queue_.push(frame_str);
+        if (!write_in_progress) {
+            do_async_write();
+        }
+    }
+
+
+    void do_async_write() {
+        if (this->write_queue_.empty()) return;
+
+        const std::string &data = this->write_queue_.front();
+        asio::async_write(
+            serial_port_,
+            asio::buffer(data),
+            [this](const boost::system::error_code &ec, std::size_t /*bytes_transferred*/) {
+                if (ec) {
+                    RCLCPP_ERROR(this->get_logger(), "Serial write error: %s", ec.message().c_str());
+                } else {
+                    std::stringstream ss;
+                    const std::string& data = this->write_queue_.front();
+
+                    for (unsigned char c : data) {
+                    ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(c) << " ";
+                    }
+
+                    RCLCPP_INFO(this->get_logger(), "Wrote to serial: %s", ss.str().c_str());
+                    this->write_queue_.pop();
+                    if (!this->write_queue_.empty()) {
+                        do_async_write();  // continue writing queued data
+                    }
+                }
+            }
+        );
+    }
+
+    uint16_t calculate_crc(const uint8_t* data, size_t len) {
+        uint16_t crc = 0xFFFF;
+        for (size_t i = 0; i < len; ++i) {
+            crc ^= static_cast<uint16_t>(data[i]) << 8;
+            for (int j = 0; j < 8; ++j) {
+                if (crc & 0x8000)
+                    crc = (crc << 1) ^ 0x1021;
+                else
+                    crc <<= 1;
+            }
+        }
+        return crc;
+    }
+
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_imu_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+
+    asio::io_context io_context_;
+    asio::serial_port serial_port_;
+    std::thread io_thread_;
+
+    char read_buffer_[1];
+    std::queue<std::string> write_queue_;
+    uint8_t seq_counter_ = 0;
+    const std::array<uint8_t, 3> sync_ = {'>', '>', '>'};
+    std::vector<uint8_t> input_buffer_;
+};
+
+
+int main(int argc, char * argv[])
+{
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<UARTBridgeNode>());
+  rclcpp::shutdown();
+  return 0;
+}
