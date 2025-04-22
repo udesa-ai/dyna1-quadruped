@@ -1,78 +1,105 @@
-## Seteo del ambiente Dyna1 usando Isaaclab y IsaacLabExtensionTemplate.
+## 🦾 Configuración del entorno para Dyna1 en Isaac Sim
 
-Parados desde su home los siguientes comando son para confugurar el ambiente:
+### Isaac Lab
+**Isaac Lab** es una librería construida sobre Isaac Sim que facilita el desarrollo de entornos de simulación para 
+aprendizaje por refuerzo (RL), control óptimo y robótica en general. Se basa en gymnasium, y ofrece herramientas ya integradas para:
 
-    cd
+- Definir entornos personalizados tipo Gym.
+- Entrenar políticas con algoritmos populares como PPO.
+- Simular robots con interfaces limpias y separadas.
+- Integrarse con librerías de RL como RL-Games, Stable-Baselines3, etc.
 
-Se deberian clonar **IsaacLabExtensionTemplate** y **IsaacLab**:
+#### ¿Por qué usarlo?
+- Estandariza cómo definís los entornos, sensores, recompensas y acciones.
+- Aísla tu entorno personalizado del resto de Isaac Sim → más fácil de mantener y migrar.
+- Ya tiene soporte para entrenamiento distribuido y acelerado por GPU.
+- Facilita la transferencia del modelo a un robot real (sim2real).
 
-    https://github.com/isaac-sim/IsaacLabExtensionTemplate.git
-    https://github.com/isaac-sim/IsaacLab.git
+### Isaac Extension Template
+Es una plantilla modular creada para estructurar proyectos en Isaac Sim de forma escalable y mantenible:
 
-Mover **DynabotIsaacTemplate** a **IsaacLabExtensionTemplate/source**:
+Incluye:
+- Separación clara entre código, assets, configuraciones.
+- Soporte para definir extensiones de OmniIsaacGymEnvs, robots, tareas, sensores, etc.
+- Integración con Isaac Lab out-of-the-box.
 
-    mv dyna1-quadruped/software/isaacsim/DynabotIsaacTemplate IsaacLabExtensionTemplate/source
-
-**DynabotIsaacTemplate** contiene toda la configuracion del Dyna1 aislada de Isaaclab, cualquier cambio que se haga en Isaaclab no afectaria (en principio a nuestro) ambiente.
-
-Editar el archivo **IsaacLab/docker/docker-compose.yaml** agregarle las siguiente lineas al final de la configuracion de **bind**
-
-    - type: bind
-    source: /home/$USER/IsaacLabExtensionTemplate
-    target: /workspace/IsaacLabExtensionTemplate
-.
-
-	type: bind
-Indica que el volumen es un montaje tipo “bind”, es decir, se vincula directamente un directorio del host al contenedor.
-
-	source: /home/$USER/IsaacLabExtensionTemplate
-Es la ruta en tu máquina local (host) que quieres montar. Aquí, $USER se reemplaza por tu nombre de usuario, y apunta a la carpeta del proyecto en tu home.
-
-	target: /workspace/IsaacLabExtensionTemplate
-Es la ruta dentro del contenedor donde ese mismo directorio aparecerá. Cualquier archivo o cambio en /workspace/IsaacLabExtensionTemplate dentro del contenedor afecta directamente al source en el host.
+#### ¿Por qué usarlo?
+- Permite trabajar en equipo con una arquitectura limpia y modular.
+- Podés agregar o quitar componentes sin romper todo el proyecto.
+- Si necesitás escalar, migrar o versionar tu entorno, esto evita el caos.
 
 
+1. Clonar los repositorios necesarios
+    
+	    cd ~
+	    https://github.com/isaac-sim/IsaacLabExtensionTemplate.git
+	    https://github.com/isaac-sim/IsaacLab.git
 
-Ejecutar el docker compose con el siguiente comando:
+2. Mover el entorno del Dyna1
 
-    ./container.sh start
+    	mv dyna1-quadruped/software/isaacsim/DynabotIsaacTemplate IsaacLabExtensionTemplate/source
 
-Este comando la primera vez puede que pida la siguiente configuracion:
+**DynabotIsaacTemplate** contiene toda la configuración específica del robot Dyna1 aislada de Isaac Lab. Esto significa que cualquier cambio en Isaac Lab no debería afectar nuestro entorno (en principio), manteniendo todo modular y desacoplado.
+
+3. Editar el archivo en **IsaacLab/docker/docker-compose.yaml** y agregar estas líneas dentro de la sección binds del servicio (al final de esa lista):
+
+		- type: bind
+		source: /home/$USER/IsaacLabExtensionTemplate
+		target: /workspace/IsaacLabExtensionTemplate
+
+¿Qué hace esto?
+
+- **type: bind:** Monta un volumen directamente desde el sistema de archivos del host.
+- **source:** Ruta local donde está el proyecto (reemplazá $USER por tu nombre de usuario si no funciona).
+- **target:** Ruta dentro del contenedor donde se verá esa carpeta.
+
+4.  Iniciar el contenedor
+   
+   		./container.sh start
+
+
+Es posible que la primera vez te aparezca este mensaje (ver Troubleshooting):
 
     X11 Forwarding is configured as '0' in '.container.cfg'.
 	To enable X11 forwarding, set 'X11_FORWARDING_ENABLED=1' in '.container.cfg'.
 
-Una vez compilado el docker ejecutar:
+5. Ingresar al contenedor
 
-    ./container.sh enter base
+		./container.sh enter base
 
-Dentro del docker hacer:
+y una vez dentro del docker hacer:
 
     cd /workspace/IsaacLabExtensionTemplate/
 
-Instalar todas las dependencias del Dyna1:
+6. Instalar todas las dependencias del Dyna1:
 
-     python -m pip install -e source/DynabotIsaacTemplate
+     	python -m pip install -e source/DynabotIsaacTemplate
 
 Si falla el paso anterior es poque probablemente antes haya que actualizar pip a la ultima version:
 
     /workspace/isaaclab/_isaac_sim/kit/python/bin/python3 -m pip install --upgrade pip
 
-Para hacer stream a otra PC (o estando desde docker a la pc host) se deberia correr este comando: 
-    
-    export LIVESTREAM=2
+7. Si se quire correr la simulación en una máquina y visualizarla desde otra, exportá esta variable:
+
+    	export LIVESTREAM=2
 
 Esto es por si se esta usando una PC para correr el entrenamiento y se quiere visualizar el output de la simulacion desde otra.
 
-Modificar la linea 68 de **IsaacLabExtensionTemplate/scripts/rsl_rl/train.py**:
+8. Modificar import en script de entrenamiento
 
-    68:import ext_template.tasks  # noqa: F401
+Editar la línea 68 del archivo IsaacLabExtensionTemplate/scripts/rsl_rl/train.py:
 
-por:
+Antes:
+
+	import ext_template.tasks  # noqa: F401
+
+Después:
     
-    68:import DynabotIsaacTemplate.tasks  # noqa: F401
+    	import DynabotIsaacTemplate.tasks  # noqa: F401
 
-finalmente si todo salio bien (aunque es muy probable que no) con el siguiente comando se deberia poder correr la simulacion para el Dyna1:
+9. Correr la simulación del Dyna1
+
+Si todo fue bien (aunque probablemente algo haya que ajustar), lanzar la simulación con:
 
     python scripts/rsl_rl/train.py --task=Dyna1-Flat-v0 --headless --num_envs=32
 
@@ -80,8 +107,8 @@ Este comando indica que se va a lanzar la simulacion con terrenos **flat**, de m
 
 ## Troubleshooting
 
-- Si no se lanza la simulacion de manera **headless** desde docker, este intenta hacer un forward del output de la simulacion y crashea porque tenemos desabilitado **x11**
-- Se puede dejar seteada una configuracion para x11 desde el archivo en **IsaacLab/docker/.container.cfg**:
+- Si la simulación no se lanza en headless desde docker, puede ser que esté intentando hacer forward del GUI y crashee (porque tenés deshabilitado x11).
+- Configurar esto en **isaacLab/docker/.container.cfg**:
   
       [X11]
       x11_forwarding_enabled = 0
