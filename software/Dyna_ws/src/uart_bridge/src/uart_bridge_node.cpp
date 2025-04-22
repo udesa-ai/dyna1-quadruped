@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include "joint_msgs/msg/joints.hpp"
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
 #include <memory>
@@ -9,6 +10,7 @@
 #include <iomanip>
 #include <vector>
 #include <cstring>  // for memcpy
+#include <cstdint>
 
 using namespace std::placeholders;
 using boost::asio::serial_port_base;
@@ -22,13 +24,14 @@ public:
           serial_port_(io_context_),
           read_buffer_{} {
 
-        publisher_ = this->create_publisher<std_msgs::msg::String>("uart_read", 10);
         publisher_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
+        publisher_motor_positions_ = this->create_publisher<joint_msgs::msg::Joints>("motor_positions", 10);
+        publisher_motor_velocities_ = this->create_publisher<joint_msgs::msg::Joints>("motor_velocities", 10);
 
 
-        subscription_ = this->create_subscription<std_msgs::msg::String>(
-            "uart_write", 10,
-            std::bind(&UARTBridgeNode::uart_write_callback, this, _1)
+        subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>(
+            "request_positions", 10,
+            std::bind(&UARTBridgeNode::request_positions, this, _1)
         );
 
         std::string port_name = "/dev/ttyTHS1";
@@ -86,8 +89,6 @@ private:
                     ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(c) << " ";
                 }
 
-                RCLCPP_INFO(this->get_logger(), "Input buffer (hex): %s", ss.str().c_str());
-
                 size_t start = std::distance(input_buffer_.begin(), it);
                 if (input_buffer_.size() < start + 9) {
                     break; // Minimum full frame = 3 sync + 1 topic + 1 seq + 2 len + 2 CRC
@@ -132,19 +133,130 @@ private:
         switch (topic_id) {
             case 1: {
                 // Topic 1: accel (xyz 4 bytes each), gyro (xyz 4 bytes each), pos (12 motors 4 bytes each), vel (12 motors 4 bytes each)
-                if (length != 8) {
+                if (length != 120) {
                     std::cout << "Invalid payload length for topic 1: " << length << std::endl;
                     return;
                 }
                 std::vector<float> floats;
                 for (size_t i = 0; i < length; i += 4) {
+                    uint32_t temp;
+                    std::memcpy(&temp, payload + i, sizeof(uint32_t));  // Copy bytes into a 32-bit temp
+                    temp = swap_bytes(temp);  // Swap bytes if necessary (if endian mismatch)
+                    
                     float value;
-                    std::memcpy(&value, payload + i, sizeof(float));
+                    std::memcpy(&value, &temp, sizeof(float));  // Convert the 32-bit temp to float
+                    
                     floats.push_back(value);
-                    RCLCPP_INFO(this->get_logger(), "Value %zu: %f", i / 4, value);
                 }
 
-                // TODO: Handle the floats as needed
+                sensor_msgs::msg::Imu msg;
+                msg.linear_acceleration.x = floats[0];
+                msg.linear_acceleration.y = floats[1];
+                msg.linear_acceleration.z = floats[2];
+                msg.angular_velocity.x = floats[3];
+                msg.angular_velocity.y = floats[4];
+                msg.angular_velocity.z = floats[5];
+                publisher_imu_->publish(msg);
+
+                RCLCPP_INFO(this->get_logger(), "Published IMU data: [%.2f, %.2f, %.2f]", msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z);
+
+                joint_msgs::msg::Joints motor_positions;
+                joint_msgs::msg::Joints motor_velocities;
+                
+                uint8_t pos_start = 6;
+                uint8_t vel_start = 18;
+
+                motor_positions.frshoulder = floats[0 + pos_start];
+                motor_velocities.frshoulder = floats[0 + vel_start];
+
+                motor_positions.frarm = floats[1 + pos_start];
+                motor_velocities.frarm = floats[1 + vel_start];
+
+                motor_positions.frfoot = floats[2 + pos_start];
+                motor_velocities.frfoot = floats[2 + vel_start];
+
+                motor_positions.flshoulder = floats[3 + pos_start];
+                motor_velocities.flshoulder = floats[3 + vel_start];
+                
+                motor_positions.flarm = floats[4 + pos_start];
+                motor_velocities.flarm = floats[4 + vel_start];
+
+                motor_positions.flfoot = floats[5 + pos_start];
+                motor_velocities.flfoot = floats[5 + vel_start];
+                
+                motor_positions.blshoulder = floats[6 + pos_start];
+                motor_velocities.blshoulder = floats[6 + vel_start];
+
+                motor_positions.blarm = floats[7 + pos_start];
+                motor_velocities.blarm = floats[7 + vel_start];
+
+                motor_positions.blfoot = floats[8 + pos_start];
+                motor_velocities.blfoot = floats[8 + vel_start];
+
+                motor_positions.brshoulder = floats[9 + pos_start];
+                motor_velocities.brshoulder = floats[9 + vel_start];
+
+                motor_positions.brarm = floats[10 + pos_start];
+                motor_velocities.brarm = floats[10 + vel_start];
+
+                motor_positions.brfoot = floats[11 + pos_start];
+                motor_velocities.brfoot = floats[11 + vel_start];
+
+                publisher_motor_positions_->publish(motor_positions);
+                publisher_motor_velocities_->publish(motor_velocities);
+                RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
+
+                break;
+            }
+
+            case 4: { // debug
+                if (length != 48) {
+                    std::cout << "Invalid payload length for topic 1: " << length << std::endl;
+                    return;
+                }
+                std::vector<float> floats;
+                for (size_t i = 0; i < length; i += 4) {
+                    uint32_t temp;
+                    std::memcpy(&temp, payload + i, sizeof(uint32_t));  // Copy bytes into a 32-bit temp
+                    //temp = swap_bytes(temp);  // Swap bytes if necessary (if endian mismatch)
+                    
+                    float value;
+                    std::memcpy(&value, &temp, sizeof(float));  // Convert the 32-bit temp to float
+                    
+                    floats.push_back(value);
+                }
+
+                joint_msgs::msg::Joints motor_positions;
+                
+                uint8_t pos_start = 0;
+
+                motor_positions.frshoulder = floats[0 + pos_start];
+
+                motor_positions.frarm = floats[1 + pos_start];
+
+                motor_positions.frfoot = floats[2 + pos_start];
+
+                motor_positions.flshoulder = floats[3 + pos_start];
+                
+                motor_positions.flarm = floats[4 + pos_start];
+                
+                motor_positions.flfoot = floats[5 + pos_start];
+               
+                motor_positions.blshoulder = floats[6 + pos_start];
+                
+                motor_positions.blarm = floats[7 + pos_start];
+    
+                motor_positions.blfoot = floats[8 + pos_start];
+                
+                motor_positions.brshoulder = floats[9 + pos_start];
+                
+                motor_positions.brarm = floats[10 + pos_start];
+                
+                motor_positions.brfoot = floats[11 + pos_start];
+                
+                publisher_motor_positions_->publish(motor_positions);
+                RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
+
                 break;
             }
 
@@ -161,10 +273,49 @@ private:
         }
     }
 
+    uint32_t swap_bytes(uint32_t value) {
+        return ((value >> 24) & 0x000000FF) |
+               ((value << 8)  & 0x00FF0000) |
+               ((value >> 8)  & 0x0000FF00) |
+               ((value << 24) & 0xFF000000);
+    }
+
+    void request_positions(const joint_msgs::msg::Joints::SharedPtr msg) {
+        uint8_t topic_id = 0x04;
+        std::vector<float> floats;
+        floats.push_back(msg->frshoulder);
+        floats.push_back(msg->frarm);
+        floats.push_back(msg->frfoot);
+        floats.push_back(msg->flshoulder);
+        floats.push_back(msg->flarm);
+        floats.push_back(msg->flfoot);
+        floats.push_back(msg->blshoulder);
+        floats.push_back(msg->blarm);
+        floats.push_back(msg->blfoot);
+        floats.push_back(msg->brshoulder);
+        floats.push_back(msg->brarm);
+        floats.push_back(msg->brfoot);
+        
+        // Vector to hold the payload of bytes
+        std::vector<uint8_t> payload;
+        payload.reserve(floats.size() * sizeof(float)); // Reserve 48 bytes for efficiency
+
+        // Convert each float to 4 bytes
+        for (const float& f : floats) {
+            uint8_t bytes[sizeof(float)];
+            std::memcpy(bytes, &f, sizeof(float));  // Copy float into byte array
+
+            // Append bytes to the payload vector
+            payload.insert(payload.end(), bytes, bytes + sizeof(float));
+        }
+
+        uart_write_callback(payload, topic_id);  // Send the payload
+    }
+
+
 
     // Writing
-    void uart_write_callback(const std_msgs::msg::String::SharedPtr msg) {
-        const std::string &payload = msg->data;
+    void uart_write_callback(const std::vector<uint8_t>& payload, uint8_t topic_id) {
         uint16_t len = payload.size();
 
         // Frame format
@@ -173,7 +324,6 @@ private:
         frame.push_back('>');
         frame.push_back('>');
 
-        uint8_t topic_id = 0x01;
         frame.push_back(topic_id);
 
         frame.push_back(seq_counter_++);  // sequence number
@@ -248,9 +398,11 @@ private:
         return crc;
     }
 
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_imu_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_positions_;
+    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_velocities_;
+
+    rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
 
     asio::io_context io_context_;
     asio::serial_port serial_port_;

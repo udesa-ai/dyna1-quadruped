@@ -14,6 +14,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(joint_msgs REQUIRED)
 
 
 if(BUILD_TESTING)
@@ -29,7 +30,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(uart_bridge_node src/uart_bridge_node.cpp)
-ament_target_dependencies(uart_bridge_node rclcpp std_msgs sensor_msgs Boost)
+ament_target_dependencies(uart_bridge_node rclcpp std_msgs sensor_msgs joint_msgs Boost)
 
 install(TARGETS
   uart_bridge_node
