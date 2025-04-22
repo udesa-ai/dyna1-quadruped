@@ -73,7 +73,7 @@ y una vez dentro del docker hacer:
 
 6. Instalar todas las dependencias del Dyna1:
 
-     	python -m pip install -e source/DynabotIsaacTemplate
+   	python -m pip install -e source/DynabotIsaacTemplate
 
 Si falla el paso anterior es poque probablemente antes haya que actualizar pip a la ultima version:
 
@@ -95,7 +95,7 @@ Antes:
 
 Después:
     
-    	import DynabotIsaacTemplate.tasks  # noqa: F401
+    import DynabotIsaacTemplate.tasks  # noqa: F401
 
 9. Correr la simulación del Dyna1
 
