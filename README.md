@@ -2,11 +2,10 @@
 ![Linar](imagenes/linar-light.png#gh-light-mode-only)
 
 
-<<<<<<< HEAD
 <h1 align="center">Dyna1 (Página en construcción)</h3>
-=======
+
 <h1 align="center">Dyna1 (pagina en construcción)</h3>
->>>>>>> work-in-progess
+
 <h3 align="center">Plataforma cuadrúpeda para evaluación de algorítmos de locomoción autónom</h3>
 
 <p align="center">
