@@ -1,0 +1,12 @@
+bool frshoulder
+bool frarm
+bool frfoot
+bool flshoulder
+bool flarm
+bool flfoot
+bool blshoulder
+bool blarm
+bool blfoot
+bool brshoulder
+bool brarm
+bool brfoot

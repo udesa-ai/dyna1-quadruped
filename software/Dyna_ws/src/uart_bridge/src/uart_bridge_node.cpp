@@ -2,6 +2,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include "joint_msgs/msg/joints.hpp"
+#include "joint_msgs/msg/joints_bool.hpp"
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
 #include <memory>
@@ -27,12 +28,30 @@ public:
         publisher_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
         publisher_motor_positions_ = this->create_publisher<joint_msgs::msg::Joints>("motor_positions", 10);
         publisher_motor_velocities_ = this->create_publisher<joint_msgs::msg::Joints>("motor_velocities", 10);
+        publisher_motor_currents_ = this->create_publisher<joint_msgs::msg::Joints>("motor_currents", 10);
 
 
         subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>(
             "request_positions", 10,
             std::bind(&UARTBridgeNode::request_positions, this, _1)
         );
+
+        subscriber_max_current = this->create_subscription<std_msgs::msg::Float32>(
+            "request_maxc", 10,
+            std::bind(&UARTBridgeNode::request_max_current, this, _1)
+        );
+
+        subscriber_reboot = this->create_subscription<joint_msgs::msg::JointsBool>(
+            "request_reboot", 10,
+            std::bind(&UARTBridgeNode::request_reboot, this, _1)
+        );
+        
+        subscriber_motor_state = this->create_subscription<joint_msgs::msg::JointsBool>(
+            "request_axisstate", 10,
+            std::bind(&UARTBridgeNode::request_motor_state, this, _1)
+        );
+
+
 
         std::string port_name = "/dev/ttyTHS1";
         int baud_rate = 115200;
@@ -133,7 +152,7 @@ private:
         switch (topic_id) {
             case 1: {
                 // Topic 1: accel (xyz 4 bytes each), gyro (xyz 4 bytes each), pos (12 motors 4 bytes each), vel (12 motors 4 bytes each)
-                if (length != 120) {
+                if (length != 168) {
                     std::cout << "Invalid payload length for topic 1: " << length << std::endl;
                     return;
                 }
@@ -162,49 +181,64 @@ private:
 
                 joint_msgs::msg::Joints motor_positions;
                 joint_msgs::msg::Joints motor_velocities;
+                joint_msgs::msg::Joints motor_currents;
                 
                 uint8_t pos_start = 6;
                 uint8_t vel_start = 18;
+                uint8_t curr_start = 30;
 
                 motor_positions.frshoulder = floats[0 + pos_start];
                 motor_velocities.frshoulder = floats[0 + vel_start];
+                motor_currents.frshoulder = floats[0 + curr_start];
 
                 motor_positions.frarm = floats[1 + pos_start];
                 motor_velocities.frarm = floats[1 + vel_start];
+                motor_currents.frarm = floats[1 + curr_start];
 
                 motor_positions.frfoot = floats[2 + pos_start];
                 motor_velocities.frfoot = floats[2 + vel_start];
+                motor_currents.frfoot = floats[2 + curr_start];                
 
                 motor_positions.flshoulder = floats[3 + pos_start];
                 motor_velocities.flshoulder = floats[3 + vel_start];
+                motor_currents.flshoulder = floats[3 + curr_start];
                 
                 motor_positions.flarm = floats[4 + pos_start];
                 motor_velocities.flarm = floats[4 + vel_start];
+                motor_currents.flarm = floats[4 + curr_start];
 
                 motor_positions.flfoot = floats[5 + pos_start];
                 motor_velocities.flfoot = floats[5 + vel_start];
+                motor_currents.flfoot = floats[5 + curr_start];
                 
                 motor_positions.blshoulder = floats[6 + pos_start];
                 motor_velocities.blshoulder = floats[6 + vel_start];
+                motor_currents.blshoulder = floats[6 + curr_start];
 
                 motor_positions.blarm = floats[7 + pos_start];
                 motor_velocities.blarm = floats[7 + vel_start];
+                motor_currents.blarm = floats[7 + curr_start];
 
                 motor_positions.blfoot = floats[8 + pos_start];
                 motor_velocities.blfoot = floats[8 + vel_start];
+                motor_currents.blfoot = floats[8 + curr_start];
 
                 motor_positions.brshoulder = floats[9 + pos_start];
                 motor_velocities.brshoulder = floats[9 + vel_start];
+                motor_currents.brshoulder = floats[9 + curr_start];
 
                 motor_positions.brarm = floats[10 + pos_start];
                 motor_velocities.brarm = floats[10 + vel_start];
+                motor_currents.brarm = floats[10 + curr_start];
 
                 motor_positions.brfoot = floats[11 + pos_start];
                 motor_velocities.brfoot = floats[11 + vel_start];
+                motor_currents.brfoot = floats[11 + curr_start];
 
                 publisher_motor_positions_->publish(motor_positions);
                 publisher_motor_velocities_->publish(motor_velocities);
-                RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
+                publisher_motor_currents_->publish(motor_currents);
+                RCLCPP_INFO(this->get_logger(), "Published motor positions, velocities, and currents");                
 
                 break;
             }
@@ -313,6 +347,56 @@ private:
     }
 
 
+    void request_max_current(const std_msgs::msg::Float::SharedPtr msg) {
+        uint8_t topic_id = 0x05;
+        float max_current = msg->data;
+        
+        // Vector to hold the payload of bytes
+        std::vector<uint8_t> payload;
+        payload.reserve(sizeof(float)); // Reserve 4 bytes for efficiency
+
+        // Convert each float to 4 bytes
+        uint8_t bytes[sizeof(float)];
+        std::memcpy(bytes, &f, sizeof(float));  // Copy float into byte array
+
+        // Append bytes to the payload vector
+        payload.insert(payload.end(), bytes, bytes + sizeof(float));
+
+        uart_write_callback(payload, topic_id);  // Send the payload
+    }
+
+    void request_reboot(const joint_msgs::msg::JointsBoool::SharedPtr msg){
+        uint8_t topic_id = 0x06;
+        send_bits(msg, topic_id);
+    }
+
+    void request_motor_state(const joint_msgs::msg::JointsBool::SharedPtr msg) {
+        uint8_t topic_id = 0x07;
+        send_bits(msg, topic_id);
+    }
+
+    void send_bits(const joint_msgs::msg::JointsBool::SharedPtr msg, uint8_t topic_id) {
+        uint16_t bitfield = 0x0000;
+        bitfield |= ((msg->frshoulder) << 0);
+        bitfield |= ((msg->frarm) << 1);
+        bitfield |= ((msg->frfoot) << 2);
+        bitfield |= ((msg->flshoulder) << 3);
+        bitfield |= ((msg->flarm) << 4);
+        bitfield |= ((msg->flfoot) << 5);
+        bitfield |= ((msg->blshoulder) << 6);
+        bitfield |= ((msg->blarm) << 7);
+        bitfield |= ((msg->blfoot) << 8);
+        bitfield |= ((msg->brshoulder) << 9);
+        bitfield |= ((msg->brarm) << 10);
+        bitfield |= ((msg->brfoot) << 11);
+        
+        payload.push_back(static_cast<uint8_t>((my_flags >> 8) & 0xFF)); // upper byte
+        payload.push_back(static_cast<uint8_t>(my_flags & 0xFF));        // lower byte
+        
+        uart_write_callback(payload, topic_id);  // Send the payload
+    }
+
+
 
     // Writing
     void uart_write_callback(const std::vector<uint8_t>& payload, uint8_t topic_id) {
@@ -403,6 +487,8 @@ private:
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_velocities_;
 
     rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscriber_max_current;
+    rclcpp::Subscription<joint_msgs::msg::JointsBool>::SharedPtr subscriber_reboot;
 
     asio::io_context io_context_;
     asio::serial_port serial_port_;

@@ -29,6 +29,7 @@ endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Joints.msg"
+  "msg/JointsBool.msg"
   "msg/MiniCmd.msg"
   "msg/OdriveData.msg"
   DEPENDENCIES builtin_interfaces  geometry_msgs std_msgs
