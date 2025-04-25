@@ -178,7 +178,7 @@ private:
                 msg.angular_velocity.z = floats[5];
                 publisher_imu_->publish(msg);
 
-                RCLCPP_INFO(this->get_logger(), "Published IMU data: [%.2f, %.2f, %.2f]", msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z);
+                // RCLCPP_INFO(this->get_logger(), "Published IMU data: [%.2f, %.2f, %.2f]", msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z);
 
                 joint_msgs::msg::Joints motor_positions;
                 joint_msgs::msg::Joints motor_velocities;
@@ -239,7 +239,7 @@ private:
                 publisher_motor_positions_->publish(motor_positions);
                 publisher_motor_velocities_->publish(motor_velocities);
                 publisher_motor_currents_->publish(motor_currents);
-                RCLCPP_INFO(this->get_logger(), "Published motor positions, velocities, and currents");                
+                // RCLCPP_INFO(this->get_logger(), "Published motor positions, velocities, and currents");                
 
                 break;
             }
@@ -290,7 +290,7 @@ private:
                 motor_positions.brfoot = floats[11 + pos_start];
                 
                 publisher_motor_positions_->publish(motor_positions);
-                RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
+                // RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
 
                 break;
             }
@@ -369,6 +369,7 @@ private:
     void request_reboot(const joint_msgs::msg::JointsBool::SharedPtr msg){
         uint8_t topic_id = 0x06;
         send_bits(msg, topic_id);
+        // RCLCPP_INFO(this->get_logger(), "received reboot request");
     }
 
     void request_motor_state(const joint_msgs::msg::JointsBool::SharedPtr msg) {
@@ -463,7 +464,7 @@ private:
                     ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(c) << " ";
                     }
 
-                    RCLCPP_INFO(this->get_logger(), "Wrote to serial: %s", ss.str().c_str());
+                    // RCLCPP_INFO(this->get_logger(), "Wrote to serial: %s", ss.str().c_str());
                     this->write_queue_.pop();
                     if (!this->write_queue_.empty()) {
                         do_async_write();  // continue writing queued data
