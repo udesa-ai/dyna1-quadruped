@@ -3,6 +3,7 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include "joint_msgs/msg/joints.hpp"
 #include "joint_msgs/msg/joints_bool.hpp"
+#include <std_msgs/msg/float32.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
 #include <memory>
@@ -347,7 +348,7 @@ private:
     }
 
 
-    void request_max_current(const std_msgs::msg::Float::SharedPtr msg) {
+    void request_max_current(const std_msgs::msg::Float32::SharedPtr msg) {
         uint8_t topic_id = 0x05;
         float max_current = msg->data;
         
@@ -365,7 +366,7 @@ private:
         uart_write_callback(payload, topic_id);  // Send the payload
     }
 
-    void request_reboot(const joint_msgs::msg::JointsBoool::SharedPtr msg){
+    void request_reboot(const joint_msgs::msg::JointsBool::SharedPtr msg){
         uint8_t topic_id = 0x06;
         send_bits(msg, topic_id);
     }
@@ -389,9 +390,13 @@ private:
         bitfield |= ((msg->brshoulder) << 9);
         bitfield |= ((msg->brarm) << 10);
         bitfield |= ((msg->brfoot) << 11);
-        
-        payload.push_back(static_cast<uint8_t>((my_flags >> 8) & 0xFF)); // upper byte
-        payload.push_back(static_cast<uint8_t>(my_flags & 0xFF));        // lower byte
+
+        // Vector to hold the payload of bytes
+        std::vector<uint8_t> payload;
+        payload.reserve(sizeof(uint16_t)); // Reserve 4 bytes for efficiency
+
+        payload.push_back(static_cast<uint8_t>((bitfield >> 8) & 0xFF)); // upper byte
+        payload.push_back(static_cast<uint8_t>(bitfield & 0xFF));        // lower byte
         
         uart_write_callback(payload, topic_id);  // Send the payload
     }
@@ -485,6 +490,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_imu_;
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_positions_;
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_velocities_;
+    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_currents_;
 
     rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscriber_max_current;
