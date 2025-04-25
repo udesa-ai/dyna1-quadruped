@@ -18,30 +18,30 @@ Motors::Motors(): Node("brushless_motors")
     rclcpp::SubscriptionOptions options;
     options.callback_group = client_cb_group_;
 
-    subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state",10,
-    std::bind(&Motors::change_state, this, _1));
+    // subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state",10,
+    // std::bind(&Motors::change_state, this, _1));
 
-    subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>("joint_requests",1000,
-    std::bind(&Motors::request, this, _1), options);
+    // subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>("joint_requests",1000,
+    // std::bind(&Motors::request, this, _1), options);
 
-    subscriber_estimates = this->create_subscription<joint_msgs::msg::Estimates>("encoder_estimates",1000,
-    std::bind(&Motors::encoder_reception, this, _1), options);
+    // subscriber_estimates = this->create_subscription<joint_msgs::msg::Estimates>("encoder_estimates",1000,
+    // std::bind(&Motors::encoder_reception, this, _1), options);
 
-    subscriber_current = this->create_subscription<joint_msgs::msg::Current>("odrive_currents",1000,
-    std::bind(&Motors::current_reception, this, _1), options);
+    // subscriber_current = this->create_subscription<joint_msgs::msg::Current>("odrive_currents",1000,
+    // std::bind(&Motors::current_reception, this, _1), options);
     
-    subscriber_max_current = this->create_subscription<joint_msgs::msg::Joints>("joint_max_currents",1000,
-    std::bind(&Motors::change_max_current, this, _1));
+    // subscriber_max_current = this->create_subscription<joint_msgs::msg::Joints>("joint_max_currents",1000,
+    // std::bind(&Motors::change_max_current, this, _1));
 
-    publisher_odrive_data = this->create_publisher<joint_msgs::msg::OdriveData>("joint_data",100);
+    // publisher_odrive_data = this->create_publisher<joint_msgs::msg::OdriveData>("joint_data",100);
 
-    publisher_request = this->create_publisher<joint_msgs::msg::CanFloat>("request_joint",24);
+    // publisher_request = this->create_publisher<joint_msgs::msg::CanFloat>("request_joint",24);
 
-    publisher_maxC = this->create_publisher<joint_msgs::msg::CanFloat>("request_maxc",24);
+    // publisher_maxC = this->create_publisher<joint_msgs::msg::CanFloat>("request_maxc",24);
 
-    publisher_reboot = this->create_publisher<joint_msgs::msg::CanInt>("request_reboot",24);
+    // publisher_reboot = this->create_publisher<joint_msgs::msg::CanInt>("request_reboot",24);
 
-    publisher_axisstate = this->create_publisher<joint_msgs::msg::CanInt>("request_axisstate",24);
+    // publisher_axisstate = this->create_publisher<joint_msgs::msg::CanInt>("request_axisstate",24);
 
     
     

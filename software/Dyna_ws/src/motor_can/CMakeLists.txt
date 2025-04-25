@@ -9,7 +9,6 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(can_msgs REQUIRED)
 find_package(joint_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
@@ -31,7 +30,7 @@ endif()
 
 
 add_executable(motores src/motors.cpp src/brushless.cpp src/jsoncpp.cpp)
-ament_target_dependencies(motores rclcpp can_msgs joint_msgs std_msgs)
+ament_target_dependencies(motores rclcpp joint_msgs std_msgs)
 
 
 install(TARGETS
