@@ -330,7 +330,7 @@ void Motors::state_change(uint8_t state)
     msg.data.brfoot = state;
     msg.axis.brfoot = axii[11];
 
-    publisher_axisstate->publish(msg);
+    // publisher_axisstate->publish(msg);
 }
 
 void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
@@ -378,7 +378,7 @@ void Motors::publish_joints()
     joints.currents.brarm = brushless_motors.find("BRarm")->second.get_current();
     joints.currents.brfoot = brushless_motors.find("BRfoot")->second.get_current();
 
-    publisher_odrive_data->publish(joints);
+    // publisher_odrive_data->publish(joints);
 }
 
 
@@ -406,7 +406,7 @@ void Motors::reboot_odrive()
     msg.axis.brarm = axii[10];
     msg.axis.brfoot = axii[11];
 
-    publisher_reboot->publish(msg);
+    // publisher_reboot->publish(msg);
 }
 
 void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
@@ -486,7 +486,7 @@ void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
     msg.data.brfoot = posii[11];
     msg.axis.brfoot = axii[11];
 
-    publisher_request->publish(msg);
+    // publisher_request->publish(msg);
 }
 
 void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents)
@@ -551,7 +551,7 @@ void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_cur
     msg.data.brfoot = currents[11];
     msg.axis.brfoot = axii[11];
 
-    publisher_maxC->publish(msg);
+    // publisher_maxC->publish(msg);
 }
 
 
