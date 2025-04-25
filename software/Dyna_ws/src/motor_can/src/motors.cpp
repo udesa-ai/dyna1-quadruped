@@ -45,10 +45,10 @@ Motors::Motors(): Node("brushless_motors")
 
     
     
-    timer_ = create_wall_timer(
-        std::chrono::milliseconds(10),
-        std::bind(&Motors::publish_joints, this), timer_cb_group_
-    );
+    // timer_ = create_wall_timer(
+    //     std::chrono::milliseconds(10),
+    //     std::bind(&Motors::publish_joints, this), timer_cb_group_
+    // );
     
 
     // Front Right 
@@ -273,286 +273,286 @@ void Motors::declare_leg_config(const std::string &leg_name)
     }
 }
 
-void Motors::encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint)
-{
-    brushless_motors.find(axisID[joint->axis])->second.update_estimates(joint->position, joint->velocity);
-}
+// void Motors::encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint)
+// {
+//     brushless_motors.find(axisID[joint->axis])->second.update_estimates(joint->position, joint->velocity);
+// }
 
-void Motors::current_reception(const joint_msgs::msg::Current::SharedPtr joint)
-{
-    brushless_motors.find(axisID[joint->axis])->second.update_current(joint->current);
-}
+// void Motors::current_reception(const joint_msgs::msg::Current::SharedPtr joint)
+// {
+//     brushless_motors.find(axisID[joint->axis])->second.update_current(joint->current);
+// }
 
-void Motors::state_change(uint8_t state) 
-{
-    joint_msgs::msg::CanInt msg;
-    uint8_t axii[12];
+// void Motors::state_change(uint8_t state) 
+// {
+//     joint_msgs::msg::CanInt msg;
+//     uint8_t axii[12];
     
-    for (uint8_t i = 0; i < 12 ; i++)
-    {   
-        uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-        axii[i] = axis;
-    }
+//     for (uint8_t i = 0; i < 12 ; i++)
+//     {   
+//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
+//         axii[i] = axis;
+//     }
 
-    msg.data.frshoulder = state;
-    msg.axis.frshoulder = axii[0];
+//     msg.data.frshoulder = state;
+//     msg.axis.frshoulder = axii[0];
 
-    msg.data.frarm = state;
-    msg.axis.frarm = axii[1];
+//     msg.data.frarm = state;
+//     msg.axis.frarm = axii[1];
 
-    msg.data.frfoot = state;
-    msg.axis.frfoot = axii[2];
+//     msg.data.frfoot = state;
+//     msg.axis.frfoot = axii[2];
 
-    msg.data.flshoulder = state;
-    msg.axis.flshoulder = axii[3];
+//     msg.data.flshoulder = state;
+//     msg.axis.flshoulder = axii[3];
 
-    msg.data.flarm = state;
-    msg.axis.flarm = axii[4];
+//     msg.data.flarm = state;
+//     msg.axis.flarm = axii[4];
 
-    msg.data.flfoot = state;
-    msg.axis.flfoot = axii[5];
+//     msg.data.flfoot = state;
+//     msg.axis.flfoot = axii[5];
 
-    msg.data.blshoulder = state;
-    msg.axis.blshoulder = axii[6];
+//     msg.data.blshoulder = state;
+//     msg.axis.blshoulder = axii[6];
 
-    msg.data.blarm = state;
-    msg.axis.blarm = axii[7];
+//     msg.data.blarm = state;
+//     msg.axis.blarm = axii[7];
 
-    msg.data.blfoot = state;
-    msg.axis.blfoot = axii[8];
+//     msg.data.blfoot = state;
+//     msg.axis.blfoot = axii[8];
 
-    msg.data.brshoulder = state;
-    msg.axis.brshoulder = axii[9];
+//     msg.data.brshoulder = state;
+//     msg.axis.brshoulder = axii[9];
 
-    msg.data.brarm = state;
-    msg.axis.brarm = axii[10];
+//     msg.data.brarm = state;
+//     msg.axis.brarm = axii[10];
 
-    msg.data.brfoot = state;
-    msg.axis.brfoot = axii[11];
+//     msg.data.brfoot = state;
+//     msg.axis.brfoot = axii[11];
 
-    // publisher_axisstate->publish(msg);
-}
+//     // publisher_axisstate->publish(msg);
+// }
 
-void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
-{
-    if (msg->data)
-    {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Turning on motors");
-        state_change(1);
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Disengaging all motors");
-        state_change(0);
-    }
+// void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
+// {
+//     if (msg->data)
+//     {
+//         RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Turning on motors");
+//         state_change(1);
+//     } else {
+//         RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Disengaging all motors");
+//         state_change(0);
+//     }
     
-}
+// }
 
-void Motors::publish_joints()
-{
-    joint_msgs::msg::OdriveData joints;
+// void Motors::publish_joints()
+// {
+//     joint_msgs::msg::OdriveData joints;
 
-    joints.angles.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
-    joints.angles.frshoulder = brushless_motors.find("FRshoulder")->second.get_angle()/rrate;
-    joints.angles.frarm = brushless_motors.find("FRarm")->second.get_angle()/rrate;
-    joints.angles.frfoot = brushless_motors.find("FRfoot")->second.get_angle()/rrate;
-    joints.angles.flshoulder = brushless_motors.find("FLshoulder")->second.get_angle()/rrate;
-    joints.angles.flarm = brushless_motors.find("FLarm")->second.get_angle()/rrate;
-    joints.angles.flfoot = brushless_motors.find("FLfoot")->second.get_angle()/rrate;
-    joints.angles.blshoulder = brushless_motors.find("BLshoulder")->second.get_angle()/rrate;
-    joints.angles.blarm = brushless_motors.find("BLarm")->second.get_angle()/rrate;
-    joints.angles.blfoot = brushless_motors.find("BLfoot")->second.get_angle()/rrate;
-    joints.angles.brshoulder = brushless_motors.find("BRshoulder")->second.get_angle()/rrate;
-    joints.angles.brarm = brushless_motors.find("BRarm")->second.get_angle()/rrate;
-    joints.angles.brfoot = brushless_motors.find("BRfoot")->second.get_angle()/rrate;
+//     joints.angles.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+//     joints.angles.frshoulder = brushless_motors.find("FRshoulder")->second.get_angle()/rrate;
+//     joints.angles.frarm = brushless_motors.find("FRarm")->second.get_angle()/rrate;
+//     joints.angles.frfoot = brushless_motors.find("FRfoot")->second.get_angle()/rrate;
+//     joints.angles.flshoulder = brushless_motors.find("FLshoulder")->second.get_angle()/rrate;
+//     joints.angles.flarm = brushless_motors.find("FLarm")->second.get_angle()/rrate;
+//     joints.angles.flfoot = brushless_motors.find("FLfoot")->second.get_angle()/rrate;
+//     joints.angles.blshoulder = brushless_motors.find("BLshoulder")->second.get_angle()/rrate;
+//     joints.angles.blarm = brushless_motors.find("BLarm")->second.get_angle()/rrate;
+//     joints.angles.blfoot = brushless_motors.find("BLfoot")->second.get_angle()/rrate;
+//     joints.angles.brshoulder = brushless_motors.find("BRshoulder")->second.get_angle()/rrate;
+//     joints.angles.brarm = brushless_motors.find("BRarm")->second.get_angle()/rrate;
+//     joints.angles.brfoot = brushless_motors.find("BRfoot")->second.get_angle()/rrate;
 
-    joints.currents.header.stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
-    joints.currents.frshoulder = brushless_motors.find("FRshoulder")->second.get_current();
-    joints.currents.frarm = brushless_motors.find("FRarm")->second.get_current();
-    joints.currents.frfoot = brushless_motors.find("FRfoot")->second.get_current();
-    joints.currents.flshoulder = brushless_motors.find("FLshoulder")->second.get_current();
-    joints.currents.flarm = brushless_motors.find("FLarm")->second.get_current();
-    joints.currents.flfoot = brushless_motors.find("FLfoot")->second.get_current();
-    joints.currents.blshoulder = brushless_motors.find("BLshoulder")->second.get_current();
-    joints.currents.blarm = brushless_motors.find("BLarm")->second.get_current();
-    joints.currents.blfoot = brushless_motors.find("BLfoot")->second.get_current();
-    joints.currents.brshoulder = brushless_motors.find("BRshoulder")->second.get_current();
-    joints.currents.brarm = brushless_motors.find("BRarm")->second.get_current();
-    joints.currents.brfoot = brushless_motors.find("BRfoot")->second.get_current();
+//     joints.currents.header.stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
+//     joints.currents.frshoulder = brushless_motors.find("FRshoulder")->second.get_current();
+//     joints.currents.frarm = brushless_motors.find("FRarm")->second.get_current();
+//     joints.currents.frfoot = brushless_motors.find("FRfoot")->second.get_current();
+//     joints.currents.flshoulder = brushless_motors.find("FLshoulder")->second.get_current();
+//     joints.currents.flarm = brushless_motors.find("FLarm")->second.get_current();
+//     joints.currents.flfoot = brushless_motors.find("FLfoot")->second.get_current();
+//     joints.currents.blshoulder = brushless_motors.find("BLshoulder")->second.get_current();
+//     joints.currents.blarm = brushless_motors.find("BLarm")->second.get_current();
+//     joints.currents.blfoot = brushless_motors.find("BLfoot")->second.get_current();
+//     joints.currents.brshoulder = brushless_motors.find("BRshoulder")->second.get_current();
+//     joints.currents.brarm = brushless_motors.find("BRarm")->second.get_current();
+//     joints.currents.brfoot = brushless_motors.find("BRfoot")->second.get_current();
 
-    // publisher_odrive_data->publish(joints);
-}
+//     // publisher_odrive_data->publish(joints);
+// }
 
 
 
-void Motors::reboot_odrive()
-{   
-    joint_msgs::msg::CanInt msg;
-    uint8_t axii[12];
-    for (uint8_t i = 0; i < 12 ; i++)
-    {
-        uint8_t axisid = brushless_motors.find(names[i])->second.get_axisID();
-        axii[i] = axisid;
-    }
+// void Motors::reboot_odrive()
+// {   
+//     joint_msgs::msg::CanInt msg;
+//     uint8_t axii[12];
+//     for (uint8_t i = 0; i < 12 ; i++)
+//     {
+//         uint8_t axisid = brushless_motors.find(names[i])->second.get_axisID();
+//         axii[i] = axisid;
+//     }
 
-    msg.axis.frshoulder = axii[0];
-    msg.axis.frarm = axii[1];
-    msg.axis.frfoot = axii[2];
-    msg.axis.flshoulder = axii[3];
-    msg.axis.flarm = axii[4];
-    msg.axis.flfoot = axii[5];
-    msg.axis.blshoulder = axii[6];
-    msg.axis.blarm = axii[7];
-    msg.axis.blfoot = axii[8];
-    msg.axis.brshoulder = axii[9];
-    msg.axis.brarm = axii[10];
-    msg.axis.brfoot = axii[11];
+//     msg.axis.frshoulder = axii[0];
+//     msg.axis.frarm = axii[1];
+//     msg.axis.frfoot = axii[2];
+//     msg.axis.flshoulder = axii[3];
+//     msg.axis.flarm = axii[4];
+//     msg.axis.flfoot = axii[5];
+//     msg.axis.blshoulder = axii[6];
+//     msg.axis.blarm = axii[7];
+//     msg.axis.blfoot = axii[8];
+//     msg.axis.brshoulder = axii[9];
+//     msg.axis.brarm = axii[10];
+//     msg.axis.brfoot = axii[11];
 
-    // publisher_reboot->publish(msg);
-}
+//     // publisher_reboot->publish(msg);
+// }
 
-void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
-{   
-    float angles[12] = {joints->frshoulder,
-                        joints->frarm,
-                        joints->frfoot,
-                        joints->flshoulder, 
-                        joints->flarm,
-                        joints->flfoot,
-                        joints->blshoulder,
-                        joints->blarm,
-                        joints->blfoot,
-                        joints->brshoulder,
-                        joints->brarm,
-                        joints->brfoot};
+// void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
+// {   
+//     float angles[12] = {joints->frshoulder,
+//                         joints->frarm,
+//                         joints->frfoot,
+//                         joints->flshoulder, 
+//                         joints->flarm,
+//                         joints->flfoot,
+//                         joints->blshoulder,
+//                         joints->blarm,
+//                         joints->blfoot,
+//                         joints->brshoulder,
+//                         joints->brarm,
+//                         joints->brfoot};
 
-    joint_msgs::msg::CanFloat msg;
-    float posii[12];
-    uint8_t axii[12];
+//     joint_msgs::msg::CanFloat msg;
+//     float posii[12];
+//     uint8_t axii[12];
     
-    for (uint8_t i = 0; i < 12 ; i++)
-    {   
-        float angle = angles[i];
-        if (joints->check_max){
-            if (angle > brushless_motors.find(names[i])->second.get_joint_max())
-            {
-                angle = brushless_motors.find(names[i])->second.get_joint_max();
-                std::cout << "Joint " << names[i] << " is too high" << std::endl;
-            } else if (angle < brushless_motors.find(names[i])->second.get_joint_min())
-            {
-                angle = brushless_motors.find(names[i])->second.get_joint_min();
-                std::cout << "Joint " << names[i] << " is too low" << std::endl;
-            }
-        }
-        angle = angle * rrate;
-        uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-        float position = brushless_motors.find(names[i])->second.get_input_from_angle(angle);
+//     for (uint8_t i = 0; i < 12 ; i++)
+//     {   
+//         float angle = angles[i];
+//         if (joints->check_max){
+//             if (angle > brushless_motors.find(names[i])->second.get_joint_max())
+//             {
+//                 angle = brushless_motors.find(names[i])->second.get_joint_max();
+//                 std::cout << "Joint " << names[i] << " is too high" << std::endl;
+//             } else if (angle < brushless_motors.find(names[i])->second.get_joint_min())
+//             {
+//                 angle = brushless_motors.find(names[i])->second.get_joint_min();
+//                 std::cout << "Joint " << names[i] << " is too low" << std::endl;
+//             }
+//         }
+//         angle = angle * rrate;
+//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
+//         float position = brushless_motors.find(names[i])->second.get_input_from_angle(angle);
 
-        axii[i] = axis;
-        posii[i] = position;
-    } 
+//         axii[i] = axis;
+//         posii[i] = position;
+//     } 
 
-    msg.data.frshoulder = posii[0];
-    msg.axis.frshoulder = axii[0];
+//     msg.data.frshoulder = posii[0];
+//     msg.axis.frshoulder = axii[0];
 
-    msg.data.frarm = posii[1];
-    msg.axis.frarm = axii[1];
+//     msg.data.frarm = posii[1];
+//     msg.axis.frarm = axii[1];
 
-    msg.data.frfoot = posii[2];
-    msg.axis.frfoot = axii[2];
+//     msg.data.frfoot = posii[2];
+//     msg.axis.frfoot = axii[2];
 
-    msg.data.flshoulder = posii[3];
-    msg.axis.flshoulder = axii[3];
+//     msg.data.flshoulder = posii[3];
+//     msg.axis.flshoulder = axii[3];
 
-    msg.data.flarm = posii[4];
-    msg.axis.flarm = axii[4];
+//     msg.data.flarm = posii[4];
+//     msg.axis.flarm = axii[4];
 
-    msg.data.flfoot = posii[5];
-    msg.axis.flfoot = axii[5];
+//     msg.data.flfoot = posii[5];
+//     msg.axis.flfoot = axii[5];
 
-    msg.data.blshoulder = posii[6];
-    msg.axis.blshoulder = axii[6];
+//     msg.data.blshoulder = posii[6];
+//     msg.axis.blshoulder = axii[6];
 
-    msg.data.blarm = posii[7];
-    msg.axis.blarm = axii[7];
+//     msg.data.blarm = posii[7];
+//     msg.axis.blarm = axii[7];
 
-    msg.data.blfoot = posii[8];
-    msg.axis.blfoot = axii[8];
+//     msg.data.blfoot = posii[8];
+//     msg.axis.blfoot = axii[8];
 
-    msg.data.brshoulder = posii[9];
-    msg.axis.brshoulder = axii[9];
+//     msg.data.brshoulder = posii[9];
+//     msg.axis.brshoulder = axii[9];
 
-    msg.data.brarm = posii[10];
-    msg.axis.brarm = axii[10];
+//     msg.data.brarm = posii[10];
+//     msg.axis.brarm = axii[10];
 
-    msg.data.brfoot = posii[11];
-    msg.axis.brfoot = axii[11];
+//     msg.data.brfoot = posii[11];
+//     msg.axis.brfoot = axii[11];
 
-    // publisher_request->publish(msg);
-}
+//     // publisher_request->publish(msg);
+// }
 
-void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents)
-{
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Changing MAX currents");
-    float currents[12] = {max_currents->frshoulder,
-                        max_currents->frarm,
-                        max_currents->frfoot,
-                        max_currents->flshoulder, 
-                        max_currents->flarm,
-                        max_currents->flfoot,
-                        max_currents->blshoulder,
-                        max_currents->blarm,
-                        max_currents->blfoot,
-                        max_currents->brshoulder,
-                        max_currents->brarm,
-                        max_currents->brfoot};
+// void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents)
+// {
+//     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Changing MAX currents");
+//     float currents[12] = {max_currents->frshoulder,
+//                         max_currents->frarm,
+//                         max_currents->frfoot,
+//                         max_currents->flshoulder, 
+//                         max_currents->flarm,
+//                         max_currents->flfoot,
+//                         max_currents->blshoulder,
+//                         max_currents->blarm,
+//                         max_currents->blfoot,
+//                         max_currents->brshoulder,
+//                         max_currents->brarm,
+//                         max_currents->brfoot};
 
-    joint_msgs::msg::CanFloat msg;
-    uint8_t axii[12];
+//     joint_msgs::msg::CanFloat msg;
+//     uint8_t axii[12];
     
-    for (uint8_t i = 0; i < 12 ; i++)
-    {   
-        uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
+//     for (uint8_t i = 0; i < 12 ; i++)
+//     {   
+//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
 
-        axii[i] = axis;
-    }
+//         axii[i] = axis;
+//     }
 
-    msg.data.frshoulder = currents[0];
-    msg.axis.frshoulder = axii[0];
+//     msg.data.frshoulder = currents[0];
+//     msg.axis.frshoulder = axii[0];
 
-    msg.data.frarm = currents[1];
-    msg.axis.frarm = axii[1];
+//     msg.data.frarm = currents[1];
+//     msg.axis.frarm = axii[1];
 
-    msg.data.frfoot = currents[2];
-    msg.axis.frfoot = axii[2];
+//     msg.data.frfoot = currents[2];
+//     msg.axis.frfoot = axii[2];
 
-    msg.data.flshoulder = currents[3];
-    msg.axis.flshoulder = axii[3];
+//     msg.data.flshoulder = currents[3];
+//     msg.axis.flshoulder = axii[3];
 
-    msg.data.flarm = currents[4];
-    msg.axis.flarm = axii[4];
+//     msg.data.flarm = currents[4];
+//     msg.axis.flarm = axii[4];
 
-    msg.data.flfoot = currents[5];
-    msg.axis.flfoot = axii[5];
+//     msg.data.flfoot = currents[5];
+//     msg.axis.flfoot = axii[5];
 
-    msg.data.blshoulder = currents[6];
-    msg.axis.blshoulder = axii[6];
+//     msg.data.blshoulder = currents[6];
+//     msg.axis.blshoulder = axii[6];
 
-    msg.data.blarm = currents[7];
-    msg.axis.blarm = axii[7];
+//     msg.data.blarm = currents[7];
+//     msg.axis.blarm = axii[7];
 
-    msg.data.blfoot = currents[8];
-    msg.axis.blfoot = axii[8];
+//     msg.data.blfoot = currents[8];
+//     msg.axis.blfoot = axii[8];
 
-    msg.data.brshoulder = currents[9];
-    msg.axis.brshoulder = axii[9];
+//     msg.data.brshoulder = currents[9];
+//     msg.axis.brshoulder = axii[9];
 
-    msg.data.brarm = currents[10];
-    msg.axis.brarm = axii[10];
+//     msg.data.brarm = currents[10];
+//     msg.axis.brarm = axii[10];
 
-    msg.data.brfoot = currents[11];
-    msg.axis.brfoot = axii[11];
+//     msg.data.brfoot = currents[11];
+//     msg.axis.brfoot = axii[11];
 
-    // publisher_maxC->publish(msg);
-}
+//     // publisher_maxC->publish(msg);
+// }
 
 
 
