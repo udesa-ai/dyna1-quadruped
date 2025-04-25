@@ -5,18 +5,18 @@ using std::placeholders::_1;
 Motors::Motors(): Node("brushless_motors")
 {
     // Declare parameters for each leg dynamically
-    declare_leg_config("FR");
-    declare_leg_config("FL");
-    declare_leg_config("BL");
-    declare_leg_config("BR");
+    // declare_leg_config("FR");
+    // declare_leg_config("FL");
+    // declare_leg_config("BL");
+    // declare_leg_config("BR");
 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Staring Motor Node");
-    rclcpp::QoS rmw_qos_profile_sensor_data(24);
+    // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Staring Motor Node");
+    // rclcpp::QoS rmw_qos_profile_sensor_data(24);
 
-    client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    timer_cb_group_ = client_cb_group_;
-    rclcpp::SubscriptionOptions options;
-    options.callback_group = client_cb_group_;
+    // client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    // timer_cb_group_ = client_cb_group_;
+    // rclcpp::SubscriptionOptions options;
+    // options.callback_group = client_cb_group_;
 
     // subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state",10,
     // std::bind(&Motors::change_state, this, _1));
@@ -51,227 +51,227 @@ Motors::Motors(): Node("brushless_motors")
     // );
     
 
-    // Front Right 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FRshoulder", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor0.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor0.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor0.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FR.motor0.direction", 0)),
-                "FRshoulder",
-                static_cast<float>(this->get_parameter_or("FR.motor0.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor0.joint_min", 0))
-            )
-        )
-    );
+//     // Front Right 
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FRshoulder", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor0.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor0.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor0.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FR.motor0.direction", 0)),
+//                 "FRshoulder",
+//                 static_cast<float>(this->get_parameter_or("FR.motor0.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor0.joint_min", 0))
+//             )
+//         )
+//     );
     
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FRarm", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor1.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor1.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor1.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FR.motor1.direction", 0)),
-                "FRarm",
-                static_cast<float>(this->get_parameter_or("FR.motor1.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor1.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FRarm", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor1.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor1.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor1.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FR.motor1.direction", 0)),
+//                 "FRarm",
+//                 static_cast<float>(this->get_parameter_or("FR.motor1.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor1.joint_min", 0))
+//             )
+//         )
+//     );
     
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FRfoot", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor2.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor2.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FR.motor2.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FR.motor2.direction", 0)),
-                "FRfoot",
-                static_cast<float>(this->get_parameter_or("FR.motor2.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FR.motor2.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FRfoot", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor2.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor2.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor2.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FR.motor2.direction", 0)),
+//                 "FRfoot",
+//                 static_cast<float>(this->get_parameter_or("FR.motor2.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FR.motor2.joint_min", 0))
+//             )
+//         )
+//     );
 
 
-    // Front Left
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FLshoulder", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor0.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor0.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor0.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FL.motor0.direction", 0)),
-                "FLshoulder",
-                static_cast<float>(this->get_parameter_or("FL.motor0.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor0.joint_min", 0))
-            )
-        )
-    );
+//     // Front Left
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FLshoulder", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor0.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor0.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor0.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FL.motor0.direction", 0)),
+//                 "FLshoulder",
+//                 static_cast<float>(this->get_parameter_or("FL.motor0.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor0.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FLarm", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor1.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor1.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor1.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FL.motor1.direction", 0)),
-                "FLarm",
-                static_cast<float>(this->get_parameter_or("FL.motor1.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor1.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FLarm", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor1.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor1.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor1.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FL.motor1.direction", 0)),
+//                 "FLarm",
+//                 static_cast<float>(this->get_parameter_or("FL.motor1.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor1.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "FLfoot", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor2.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor2.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("FL.motor2.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("FL.motor2.direction", 0)),
-                "FLfoot",
-                static_cast<float>(this->get_parameter_or("FL.motor2.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("FL.motor2.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "FLfoot", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor2.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor2.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor2.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("FL.motor2.direction", 0)),
+//                 "FLfoot",
+//                 static_cast<float>(this->get_parameter_or("FL.motor2.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("FL.motor2.joint_min", 0))
+//             )
+//         )
+//     );
 
 
-    // Back Left
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BLshoulder", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor0.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor0.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor0.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BL.motor0.direction", 0)),
-                "BLshoulder",
-                static_cast<float>(this->get_parameter_or("BL.motor0.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor0.joint_min", 0))
-            )
-        )
-    );
+//     // Back Left
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BLshoulder", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor0.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor0.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor0.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BL.motor0.direction", 0)),
+//                 "BLshoulder",
+//                 static_cast<float>(this->get_parameter_or("BL.motor0.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor0.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BLarm", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor1.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor1.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor1.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BL.motor1.direction", 0)),
-                "BLarm",
-                static_cast<float>(this->get_parameter_or("BL.motor1.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor1.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BLarm", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor1.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor1.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor1.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BL.motor1.direction", 0)),
+//                 "BLarm",
+//                 static_cast<float>(this->get_parameter_or("BL.motor1.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor1.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BLfoot", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor2.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor2.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BL.motor2.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BL.motor2.direction", 0)),
-                "BLfoot",
-                static_cast<float>(this->get_parameter_or("BL.motor2.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BL.motor2.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BLfoot", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor2.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor2.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor2.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BL.motor2.direction", 0)),
+//                 "BLfoot",
+//                 static_cast<float>(this->get_parameter_or("BL.motor2.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BL.motor2.joint_min", 0))
+//             )
+//         )
+//     );
 
-    // Back Right
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BRshoulder", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor0.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor0.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor0.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BR.motor0.direction", 0)),
-                "BRshoulder",
-                static_cast<float>(this->get_parameter_or("BR.motor0.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor0.joint_min", 0))
-            )
-        )
-    );
+//     // Back Right
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BRshoulder", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor0.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor0.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor0.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BR.motor0.direction", 0)),
+//                 "BRshoulder",
+//                 static_cast<float>(this->get_parameter_or("BR.motor0.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor0.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BRarm", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor1.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor1.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor1.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BR.motor1.direction", 0)),
-                "BRarm",
-                static_cast<float>(this->get_parameter_or("BR.motor1.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor1.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BRarm", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor1.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor1.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor1.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BR.motor1.direction", 0)),
+//                 "BRarm",
+//                 static_cast<float>(this->get_parameter_or("BR.motor1.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor1.joint_min", 0))
+//             )
+//         )
+//     );
 
-    brushless_motors.insert(
-        std::pair<std::string, BrushlessMotor>(
-            "BRfoot", 
-            BrushlessMotor(
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor2.motorN", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor2.iOffset", 0.0)),
-                static_cast<uint8_t>(this->get_parameter_or("BR.motor2.axisID", 0)),
-                static_cast<int8_t>(this->get_parameter_or("BR.motor2.direction", 0)),
-                "BRfoot",
-                static_cast<float>(this->get_parameter_or("BR.motor2.joint_max", 0)),
-                static_cast<float>(this->get_parameter_or("BR.motor2.joint_min", 0))
-            )
-        )
-    );
+//     brushless_motors.insert(
+//         std::pair<std::string, BrushlessMotor>(
+//             "BRfoot", 
+//             BrushlessMotor(
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor2.motorN", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor2.iOffset", 0.0)),
+//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor2.axisID", 0)),
+//                 static_cast<int8_t>(this->get_parameter_or("BR.motor2.direction", 0)),
+//                 "BRfoot",
+//                 static_cast<float>(this->get_parameter_or("BR.motor2.joint_max", 0)),
+//                 static_cast<float>(this->get_parameter_or("BR.motor2.joint_min", 0))
+//             )
+//         )
+//     );
 
-    for (auto& pair : brushless_motors) {
-        axisID[pair.second.get_axisID()] = pair.first;
-    }
+//     for (auto& pair : brushless_motors) {
+//         axisID[pair.second.get_axisID()] = pair.first;
+//     }
 
-    rrate = 9;
+//     rrate = 9;
 
-    names[0] = "FRshoulder";
-    names[1] = "FRarm";
-    names[2] = "FRfoot";
-    names[3] = "FLshoulder";
-    names[4] = "FLarm";
-    names[5] = "FLfoot";
-    names[6] = "BLshoulder";
-    names[7] = "BLarm";
-    names[8] = "BLfoot";
-    names[9] = "BRshoulder";
-    names[10] = "BRarm";
-    names[11] = "BRfoot";
+//     names[0] = "FRshoulder";
+//     names[1] = "FRarm";
+//     names[2] = "FRfoot";
+//     names[3] = "FLshoulder";
+//     names[4] = "FLarm";
+//     names[5] = "FLfoot";
+//     names[6] = "BLshoulder";
+//     names[7] = "BLarm";
+//     names[8] = "BLfoot";
+//     names[9] = "BRshoulder";
+//     names[10] = "BRarm";
+//     names[11] = "BRfoot";
 }
 
-void Motors::declare_leg_config(const std::string &leg_name)
-{
-    this->declare_parameter<std::string>(leg_name + ".legType", "");
-    for (int i = 0; i < 3; ++i)
-    {
-        std::string motor_key = leg_name + ".motor" + std::to_string(i);
-        this->declare_parameter<int>(motor_key + ".motorN", 0);
-        this->declare_parameter<int>(motor_key + ".axisID", 0);
-        this->declare_parameter<int>(motor_key + ".direction", 1);
-        this->declare_parameter<double>(motor_key + ".iOffset", 0.0);
-        this->declare_parameter<double>(motor_key + ".calibration_angle", 0.0);
-        this->declare_parameter<double>(motor_key + ".joint_limit_min", 0.0);
-        this->declare_parameter<double>(motor_key + ".joint_limit_max", 0.0);
-    }
-}
+// void Motors::declare_leg_config(const std::string &leg_name)
+// {
+//     this->declare_parameter<std::string>(leg_name + ".legType", "");
+//     for (int i = 0; i < 3; ++i)
+//     {
+//         std::string motor_key = leg_name + ".motor" + std::to_string(i);
+//         this->declare_parameter<int>(motor_key + ".motorN", 0);
+//         this->declare_parameter<int>(motor_key + ".axisID", 0);
+//         this->declare_parameter<int>(motor_key + ".direction", 1);
+//         this->declare_parameter<double>(motor_key + ".iOffset", 0.0);
+//         this->declare_parameter<double>(motor_key + ".calibration_angle", 0.0);
+//         this->declare_parameter<double>(motor_key + ".joint_limit_min", 0.0);
+//         this->declare_parameter<double>(motor_key + ".joint_limit_max", 0.0);
+//     }
+// }
 
 // void Motors::encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint)
 // {

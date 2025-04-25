@@ -358,7 +358,7 @@ private:
 
         // Convert each float to 4 bytes
         uint8_t bytes[sizeof(float)];
-        std::memcpy(bytes, &f, sizeof(float));  // Copy float into byte array
+        std::memcpy(bytes, &max_current, sizeof(float));  // Copy float into byte array
 
         // Append bytes to the payload vector
         payload.insert(payload.end(), bytes, bytes + sizeof(float));
@@ -495,6 +495,7 @@ private:
     rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscriber_max_current;
     rclcpp::Subscription<joint_msgs::msg::JointsBool>::SharedPtr subscriber_reboot;
+    rclcpp::Subscription<joint_msgs::msg::JointsBool>::SharedPtr subscriber_motor_state;
 
     asio::io_context io_context_;
     asio::serial_port serial_port_;

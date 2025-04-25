@@ -16,15 +16,15 @@
 class Motors : public rclcpp::Node {
 public:
     Motors();
-    void reboot_odrive();
-    void declare_leg_config(const std::string &leg_name);
+    // void reboot_odrive();
+    // void declare_leg_config(const std::string &leg_name);
 
 
 private:
-    uint8_t rrate;
-    std::map<std::string, BrushlessMotor> brushless_motors;
-    std::map<uint8_t, std::string> axisID;
-    std::string names[12];
+    // uint8_t rrate;
+    // std::map<std::string, BrushlessMotor> brushless_motors;
+    // std::map<uint8_t, std::string> axisID;
+    // std::string names[12];
     
     
     
@@ -39,9 +39,9 @@ private:
     // rclcpp::Subscription<joint_msgs::msg::Estimates>::SharedPtr subscriber_estimates;
     // rclcpp::Subscription<joint_msgs::msg::Current>::SharedPtr subscriber_current;
 
-    rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::CallbackGroup::SharedPtr client_cb_group_;
-    rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
+    // rclcpp::TimerBase::SharedPtr timer_;
+    // rclcpp::CallbackGroup::SharedPtr client_cb_group_;
+    // rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
 
 
     // void publish_joints();
