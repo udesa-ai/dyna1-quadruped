@@ -44,13 +44,13 @@ private:
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
 
 
-    void publish_joints();
-    void request(const joint_msgs::msg::Joints::SharedPtr joints);
-    void change_state(const std_msgs::msg::Bool::SharedPtr msg);
-    void change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents);
-    void encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint);
-    void current_reception(const joint_msgs::msg::Current::SharedPtr joint);
-    void state_change(uint8_t state);
+    // void publish_joints();
+    // void request(const joint_msgs::msg::Joints::SharedPtr joints);
+    // void change_state(const std_msgs::msg::Bool::SharedPtr msg);
+    // void change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents);
+    // void encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint);
+    // void current_reception(const joint_msgs::msg::Current::SharedPtr joint);
+    // void state_change(uint8_t state);
     // send_command(uint8_t axisID, uint8_t command, data);
 };
 
