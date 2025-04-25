@@ -61,22 +61,6 @@ def generate_launch_description():
         )
     )
 
-    state_machine = Node(
-            package='dyna_sm',
-            namespace='',
-            executable='state_machine',
-            output="screen",
-            name='state_machine',
-            parameters=[
-                {"frequency": 160.0}
-            ])
-
-    # trace = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [os.path.join(get_package_share_directory('tracetools_launch'),'launch'),'/example.launch.py']
-    #     )
-    # )
-
     safety = Node(
             package='safety',
             namespace='',
@@ -85,15 +69,27 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
     
+    optical = Node(package='serial_interface_py',
+            namespace='',
+            executable='serial_interface_py',
+            name='serial_interface_py',
+            output="screen",
+            )
+
+    net = Node(package='neural_net',
+            namespace='',
+            executable='neural_thinking',
+            name='Neural_Net',
+            output="screen",
+            )
+    
     return LaunchDescription([
         MAX_CURRENT_launch_arg,
         inter,
-        # trace,
         imu,
         motores,
         can_bridge,
-        # state_machine,
         control,
-        # bag,
-        # imu_translator
-        safety])
+        safety,
+        optical,
+        net])

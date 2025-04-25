@@ -1,7 +1,7 @@
 #include "brushless.hpp"
 
-BrushlessMotor::BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string name)
-    : name(name), mnumber(motorn), pos0(pos0), direc(direc), axisId(axisID) 
+BrushlessMotor::BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string name, float joint_max, float joint_min)
+    : name(name), mnumber(motorn), pos0(pos0), direc(direc), axisId(axisID), joint_max(joint_max), joint_min(joint_min)
     {
         pos_estimate = 0;
         vel_estimate = 0;
@@ -70,6 +70,14 @@ void BrushlessMotor::update_estimates(float position, float velocity) {
 
 void BrushlessMotor::update_current(float current) {
     Iq_measured = current;
+}
+
+float BrushlessMotor::get_joint_max() {
+    return (float) joint_max;
+}
+
+float BrushlessMotor::get_joint_min() {
+    return (float) joint_min;
 }
 
 BrushlessMotor::~BrushlessMotor(){}

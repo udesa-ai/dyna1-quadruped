@@ -5,10 +5,11 @@ from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
+    
     config = os.path.join(
         get_package_share_directory('motor_can'),
         'config',
-        'config.json'
+        'motor_params.yaml'
         )
     
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
@@ -20,8 +21,8 @@ def generate_launch_description():
             name='motores',
             output="screen",
             parameters=[
-                {"fileLocation": config,
-                 'use_sim_time': use_sim_time}
+                config,
+                {'use_sim_time': use_sim_time}
             ])
     
     return launch.LaunchDescription([motores])

@@ -45,21 +45,11 @@ def generate_launch_description():
             name='joy_node',
             output="screen",
             )
-    
-    control = IncludeLaunchDescription(
-    	PythonLaunchDescriptionSource(
-            [
-                os.path.join(get_package_share_directory('controler'), 'launch'),
-             			  '/real_interface_launch.py'
-            ]
-        )
-    )
 
     
     return LaunchDescription([
         bag,
         joycon,
-        # control,
         state_machine,
         teleoperation,
         ])

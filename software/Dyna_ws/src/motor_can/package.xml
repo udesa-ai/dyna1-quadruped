@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>can_msgs</depend>
   <depend>joint_msgs</depend>
   <depend>std_msgs</depend>
 
