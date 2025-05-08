@@ -11,7 +11,7 @@
 
 class BrushlessMotor {
 public:
-    BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string name, float joint_max, float joint_min);
+    BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string& name, float joint_max, float joint_min);
 
     uint8_t get_axisID();
     void set_pos0(float value);

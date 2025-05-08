@@ -169,10 +169,10 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
 
     /* Subscription in charge of receiving new data */
     subscription_joint_data = this->create_subscription<joint_msgs::msg::OdriveData>("joint_data",
-    10,std::bind(&RealInterface::update_data, this, _1), options);
+    10,std::bind(&RealInterface::update_data, this, _1));
 
     errors_data = this->create_subscription<error_msgs::msg::Error>("error_state",
-    10,std::bind(&RealInterface::error_update, this, _1), options);
+    10,std::bind(&RealInterface::error_update, this, _1));
 
     sub_imu = this->create_subscription<custom_sensor_msgs::msg::IMUdata>("IMU",
     10,std::bind(&RealInterface::imu_cb, this, _1));
@@ -181,7 +181,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     ja_pub = this->create_publisher<joint_msgs::msg::Joints>("joint_requests",1);
     motor_state = this->create_publisher<std_msgs::msg::Bool>("motors_state",1);
 
-    publish_max_currents = this->create_publisher<joint_msgs::msg::Joints>("joint_max_currents",2);
+    publish_max_currents = this->create_publisher<std_msgs::msg::Float32>("request_maxc",10);
 
     traj = Trajectories(POLYNOMIAL);
 
@@ -224,7 +224,12 @@ void RealInterface::update_data(joint_msgs::msg::OdriveData::SharedPtr data)
     joint_angles << data->angles.flshoulder, data->angles.flarm, data->angles.flfoot,
                     data->angles.frshoulder, data->angles.frarm, data->angles.frfoot,
                     data->angles.blshoulder, data->angles.blarm, data->angles.blfoot,
-                    data->angles.brshoulder, data->angles.brarm, data->angles.brfoot;  
+                    data->angles.brshoulder, data->angles.brarm, data->angles.brfoot;
+    
+    joint_velocities_rpm << data->velocities.flshoulder, data->velocities.flarm, data->velocities.flfoot,
+                      data->velocities.frshoulder, data->velocities.frarm, data->velocities.frfoot,
+                      data->velocities.blshoulder, data->velocities.blarm, data->velocities.blfoot,
+                      data->velocities.brshoulder, data->velocities.brarm, data->velocities.brfoot;
 
     joint_currents << data->currents.flshoulder, data->currents.flarm, data->currents.flfoot,
                       data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
@@ -311,19 +316,9 @@ void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
 
 void RealInterface::set_current(uint8_t max_current){
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),(std::string("Configuring currents to ") + std::to_string(max_current)).c_str());
-    joint_msgs::msg::Joints msg;   
-    msg.flshoulder = max_current;
-    msg.flarm = max_current;
-    msg.flfoot = max_current;
-    msg.frshoulder = max_current;
-    msg.frarm = max_current;
-    msg.frfoot = max_current;
-    msg.blshoulder = max_current;
-    msg.blarm = max_current;
-    msg.blfoot = max_current;
-    msg.brshoulder = max_current;
-    msg.brarm = max_current;
-    msg.brfoot = max_current;
+    std_msgs::msg::Float32 msg;
+    // convert to float
+    msg.data = (float) max_current;
     publish_max_currents->publish(msg);
 }
     

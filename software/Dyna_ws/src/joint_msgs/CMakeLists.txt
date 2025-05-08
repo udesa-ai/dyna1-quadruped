@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/JointsBool.msg"
   "msg/MiniCmd.msg"
   "msg/OdriveData.msg"
+  "msg/Estimates.msg"
+  "msg/JointEstimates.msg"
   DEPENDENCIES builtin_interfaces  geometry_msgs std_msgs
 )
 

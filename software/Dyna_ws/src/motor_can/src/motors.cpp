@@ -4,556 +4,318 @@ using std::placeholders::_1;
 
 Motors::Motors(): Node("brushless_motors")
 {
-    // Declare parameters for each leg dynamically
-    // declare_leg_config("FR");
-    // declare_leg_config("FL");
-    // declare_leg_config("BL");
-    // declare_leg_config("BR");
+    declare_leg_config("FR");
+    declare_leg_config("FL");
+    declare_leg_config("BL");
+    declare_leg_config("BR");
 
-    // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Staring Motor Node");
-    // rclcpp::QoS rmw_qos_profile_sensor_data(24);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Staring Motor Node");
+    rclcpp::QoS rmw_qos_profile_sensor_data(24);
 
-    // client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    // timer_cb_group_ = client_cb_group_;
-    // rclcpp::SubscriptionOptions options;
-    // options.callback_group = client_cb_group_;
+    client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    timer_cb_group_ = client_cb_group_;
+    rclcpp::SubscriptionOptions options;
+    options.callback_group = client_cb_group_;
 
-    // subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state",10,
-    // std::bind(&Motors::change_state, this, _1));
+    subscriber_state= this->create_subscription<std_msgs::msg::Bool>("/motors_state", 10,
+        std::bind(&Motors::change_state, this, _1));
 
-    // subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>("joint_requests",1000,
-    // std::bind(&Motors::request, this, _1), options);
+    subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>("joint_requests",48,
+                                        std::bind(&Motors::request, this, _1));
 
-    // subscriber_estimates = this->create_subscription<joint_msgs::msg::Estimates>("encoder_estimates",1000,
-    // std::bind(&Motors::encoder_reception, this, _1), options);
+    subscriber_estimates = this->create_subscription<joint_msgs::msg::JointEstimates>("motor_data",48,
+        std::bind(&Motors::data_reception, this, _1));
 
-    // subscriber_current = this->create_subscription<joint_msgs::msg::Current>("odrive_currents",1000,
-    // std::bind(&Motors::current_reception, this, _1), options);
-    
-    // subscriber_max_current = this->create_subscription<joint_msgs::msg::Joints>("joint_max_currents",1000,
-    // std::bind(&Motors::change_max_current, this, _1));
+    publisher_odrive_data = this->create_publisher<joint_msgs::msg::OdriveData>("joint_data",100);
 
-    // publisher_odrive_data = this->create_publisher<joint_msgs::msg::OdriveData>("joint_data",100);
+    publisher_request = this->create_publisher<joint_msgs::msg::Joints>("request_positions",24);
 
-    // publisher_request = this->create_publisher<joint_msgs::msg::CanFloat>("request_joint",24);
+    publisher_reboot = this->create_publisher<joint_msgs::msg::JointsBool>("request_reboot",10);
 
-    // publisher_maxC = this->create_publisher<joint_msgs::msg::CanFloat>("request_maxc",24);
-
-    // publisher_reboot = this->create_publisher<joint_msgs::msg::CanInt>("request_reboot",24);
-
-    // publisher_axisstate = this->create_publisher<joint_msgs::msg::CanInt>("request_axisstate",24);
+    publisher_axisstate = this->create_publisher<joint_msgs::msg::JointsBool>("request_axisstate",10);
 
     
     
-    // timer_ = create_wall_timer(
-    //     std::chrono::milliseconds(10),
-    //     std::bind(&Motors::publish_joints, this), timer_cb_group_
-    // );
+    timer_ = create_wall_timer(
+        std::chrono::milliseconds(10),
+        std::bind(&Motors::publish_joints, this), timer_cb_group_
+    );
     
 
-//     // Front Right 
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FRshoulder", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor0.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor0.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor0.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FR.motor0.direction", 0)),
-//                 "FRshoulder",
-//                 static_cast<float>(this->get_parameter_or("FR.motor0.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor0.joint_min", 0))
-//             )
-//         )
-//     );
-    
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FRarm", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor1.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor1.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor1.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FR.motor1.direction", 0)),
-//                 "FRarm",
-//                 static_cast<float>(this->get_parameter_or("FR.motor1.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor1.joint_min", 0))
-//             )
-//         )
-//     );
-    
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FRfoot", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor2.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor2.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FR.motor2.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FR.motor2.direction", 0)),
-//                 "FRfoot",
-//                 static_cast<float>(this->get_parameter_or("FR.motor2.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FR.motor2.joint_min", 0))
-//             )
-//         )
-//     );
+    std::vector<std::string> positions = {"FR", "FL", "BL", "BR"};
+    std::vector<std::string> parts = {"shoulder", "arm", "foot"};
 
+    for (const auto& pos : positions) {
+        for (size_t i = 0; i < parts.size(); ++i) {
+            std::string motor_name = pos + parts[i];
+            brushless_motors.insert(
+                std::pair<std::string, BrushlessMotor>(
+                    motor_name,
+                    BrushlessMotor(
+                        static_cast<uint8_t>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".motorN", 0)),
+                        static_cast<float>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".iOffset", 0.0)),
+                        static_cast<uint8_t>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".axisID", 0)),
+                        static_cast<int8_t>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".direction", 0)),
+                        motor_name,
+                        static_cast<float>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".joint_max", 0)),
+                        static_cast<float>(this->get_parameter_or(pos + ".motor" + std::to_string(i) + ".joint_min", 0))
+                    )
+                )
+            );
+        }
+    }
 
-//     // Front Left
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FLshoulder", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor0.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor0.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor0.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FL.motor0.direction", 0)),
-//                 "FLshoulder",
-//                 static_cast<float>(this->get_parameter_or("FL.motor0.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor0.joint_min", 0))
-//             )
-//         )
-//     );
+    for (auto& pair : brushless_motors) {
+        axisID[pair.second.get_axisID()] = pair.first;
+    }
 
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FLarm", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor1.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor1.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor1.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FL.motor1.direction", 0)),
-//                 "FLarm",
-//                 static_cast<float>(this->get_parameter_or("FL.motor1.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor1.joint_min", 0))
-//             )
-//         )
-//     );
+    rrate = 9;
 
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "FLfoot", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor2.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor2.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("FL.motor2.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("FL.motor2.direction", 0)),
-//                 "FLfoot",
-//                 static_cast<float>(this->get_parameter_or("FL.motor2.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("FL.motor2.joint_min", 0))
-//             )
-//         )
-//     );
-
-
-//     // Back Left
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BLshoulder", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor0.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor0.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor0.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BL.motor0.direction", 0)),
-//                 "BLshoulder",
-//                 static_cast<float>(this->get_parameter_or("BL.motor0.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor0.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BLarm", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor1.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor1.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor1.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BL.motor1.direction", 0)),
-//                 "BLarm",
-//                 static_cast<float>(this->get_parameter_or("BL.motor1.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor1.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BLfoot", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor2.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor2.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BL.motor2.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BL.motor2.direction", 0)),
-//                 "BLfoot",
-//                 static_cast<float>(this->get_parameter_or("BL.motor2.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BL.motor2.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     // Back Right
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BRshoulder", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor0.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor0.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor0.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BR.motor0.direction", 0)),
-//                 "BRshoulder",
-//                 static_cast<float>(this->get_parameter_or("BR.motor0.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor0.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BRarm", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor1.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor1.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor1.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BR.motor1.direction", 0)),
-//                 "BRarm",
-//                 static_cast<float>(this->get_parameter_or("BR.motor1.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor1.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     brushless_motors.insert(
-//         std::pair<std::string, BrushlessMotor>(
-//             "BRfoot", 
-//             BrushlessMotor(
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor2.motorN", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor2.iOffset", 0.0)),
-//                 static_cast<uint8_t>(this->get_parameter_or("BR.motor2.axisID", 0)),
-//                 static_cast<int8_t>(this->get_parameter_or("BR.motor2.direction", 0)),
-//                 "BRfoot",
-//                 static_cast<float>(this->get_parameter_or("BR.motor2.joint_max", 0)),
-//                 static_cast<float>(this->get_parameter_or("BR.motor2.joint_min", 0))
-//             )
-//         )
-//     );
-
-//     for (auto& pair : brushless_motors) {
-//         axisID[pair.second.get_axisID()] = pair.first;
-//     }
-
-//     rrate = 9;
-
-//     names[0] = "FRshoulder";
-//     names[1] = "FRarm";
-//     names[2] = "FRfoot";
-//     names[3] = "FLshoulder";
-//     names[4] = "FLarm";
-//     names[5] = "FLfoot";
-//     names[6] = "BLshoulder";
-//     names[7] = "BLarm";
-//     names[8] = "BLfoot";
-//     names[9] = "BRshoulder";
-//     names[10] = "BRarm";
-//     names[11] = "BRfoot";
+    names[0] = "FRshoulder";
+    names[1] = "FRarm";
+    names[2] = "FRfoot";
+    names[3] = "FLshoulder";
+    names[4] = "FLarm";
+    names[5] = "FLfoot";
+    names[6] = "BLshoulder";
+    names[7] = "BLarm";
+    names[8] = "BLfoot";
+    names[9] = "BRshoulder";
+    names[10] = "BRarm";
+    names[11] = "BRfoot";
 }
 
-// void Motors::declare_leg_config(const std::string &leg_name)
-// {
-//     this->declare_parameter<std::string>(leg_name + ".legType", "");
-//     for (int i = 0; i < 3; ++i)
-//     {
-//         std::string motor_key = leg_name + ".motor" + std::to_string(i);
-//         this->declare_parameter<int>(motor_key + ".motorN", 0);
-//         this->declare_parameter<int>(motor_key + ".axisID", 0);
-//         this->declare_parameter<int>(motor_key + ".direction", 1);
-//         this->declare_parameter<double>(motor_key + ".iOffset", 0.0);
-//         this->declare_parameter<double>(motor_key + ".calibration_angle", 0.0);
-//         this->declare_parameter<double>(motor_key + ".joint_limit_min", 0.0);
-//         this->declare_parameter<double>(motor_key + ".joint_limit_max", 0.0);
-//     }
-// }
+void Motors::declare_leg_config(const std::string &leg_name)
+{
+    this->declare_parameter<std::string>(leg_name + ".legType", "");
+    for (int i = 0; i < 3; ++i)
+    {
+        std::string motor_key = leg_name + ".motor" + std::to_string(i);
+        this->declare_parameter<int>(motor_key + ".motorN", 0);
+        this->declare_parameter<int>(motor_key + ".axisID", 0);
+        this->declare_parameter<int>(motor_key + ".direction", 1);
+        this->declare_parameter<double>(motor_key + ".iOffset", 0.0);
+        this->declare_parameter<double>(motor_key + ".calibration_angle", 0.0);
+        this->declare_parameter<double>(motor_key + ".joint_limit_min", 0.0);
+        this->declare_parameter<double>(motor_key + ".joint_limit_max", 0.0);
+    }
+}
 
-// void Motors::encoder_reception(const joint_msgs::msg::Estimates::SharedPtr joint)
-// {
-//     brushless_motors.find(axisID[joint->axis])->second.update_estimates(joint->position, joint->velocity);
-// }
+void Motors::data_reception(const joint_msgs::msg::JointEstimates::SharedPtr joints)
+{   
+    // FRshoulder
+    brushless_motors.find(axisID[0])->second.update_estimates(joints->frshoulder.position,
+                                                              joints->frshoulder.velocity);
+    brushless_motors.find(axisID[0])->second.update_current(joints->frshoulder.current);
 
-// void Motors::current_reception(const joint_msgs::msg::Current::SharedPtr joint)
-// {
-//     brushless_motors.find(axisID[joint->axis])->second.update_current(joint->current);
-// }
+    // FRarm
+    brushless_motors.find(axisID[1])->second.update_estimates(joints->frarm.position,
+                                                              joints->frarm.velocity);
+    brushless_motors.find(axisID[1])->second.update_current(joints->frarm.current);
 
-// void Motors::state_change(uint8_t state) 
-// {
-//     joint_msgs::msg::CanInt msg;
-//     uint8_t axii[12];
+    // FRfoot
+    brushless_motors.find(axisID[2])->second.update_estimates(joints->frfoot.position,
+                                                              joints->frfoot.velocity);
+    brushless_motors.find(axisID[2])->second.update_current(joints->frfoot.current);
+
+    // FLshoulder
+    brushless_motors.find(axisID[3])->second.update_estimates(joints->flshoulder.position,
+                                                              joints->flshoulder.velocity);
+    brushless_motors.find(axisID[3])->second.update_current(joints->flshoulder.current);
+
+    // FLarm
+    brushless_motors.find(axisID[4])->second.update_estimates(joints->flarm.position,
+                                                              joints->flarm.velocity);
+    brushless_motors.find(axisID[4])->second.update_current(joints->flarm.current);
+
+    // FLfoot
+    brushless_motors.find(axisID[5])->second.update_estimates(joints->flfoot.position,
+                                                              joints->flfoot.velocity);
+    brushless_motors.find(axisID[5])->second.update_current(joints->flfoot.current);
+
+    // BLshoulder
+    brushless_motors.find(axisID[6])->second.update_estimates(joints->blshoulder.position,
+                                                              joints->blshoulder.velocity);
+    brushless_motors.find(axisID[6])->second.update_current(joints->blshoulder.current);
+
+    // BLarm
+    brushless_motors.find(axisID[7])->second.update_estimates(joints->blarm.position,
+                                                              joints->blarm.velocity);
+    brushless_motors.find(axisID[7])->second.update_current(joints->blarm.current);
+
+    // BLfoot
+    brushless_motors.find(axisID[8])->second.update_estimates(joints->blfoot.position,
+                                                              joints->blfoot.velocity);
+    brushless_motors.find(axisID[8])->second.update_current(joints->blfoot.current);
+
+    // BRshoulder
+    brushless_motors.find(axisID[9])->second.update_estimates(joints->brshoulder.position,
+                                                              joints->brshoulder.velocity);
+    brushless_motors.find(axisID[9])->second.update_current(joints->brshoulder.current);
+
+    // BRarm
+    brushless_motors.find(axisID[10])->second.update_estimates(joints->brarm.position,
+                                                               joints->brarm.velocity);
+    brushless_motors.find(axisID[10])->second.update_current(joints->brarm.current);
+
+    // BRfoot
+    brushless_motors.find(axisID[11])->second.update_estimates(joints->brfoot.position,
+                                                              joints->brfoot.velocity);
+    brushless_motors.find(axisID[11])->second.update_current(joints->brfoot.current);
+}
+
+
+void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    joint_msgs::msg::JointsBool data;
+    if (msg->data)
+    {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Turning on motors");
+    } else {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Disengaging all motors");
+    }
+
+    data.frshoulder = msg->data;
+    data.frarm = msg->data;
+    data.frfoot = msg->data;
+    data.flshoulder = msg->data;
+    data.flarm = msg->data;
+    data.flfoot = msg->data;
+    data.blshoulder = msg->data;
+    data.blarm = msg->data;
+    data.blfoot = msg->data;
+    data.brshoulder = msg->data;
+    data.brarm = msg->data;
+    data.brfoot = msg->data;
     
-//     for (uint8_t i = 0; i < 12 ; i++)
-//     {   
-//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-//         axii[i] = axis;
-//     }
-
-//     msg.data.frshoulder = state;
-//     msg.axis.frshoulder = axii[0];
-
-//     msg.data.frarm = state;
-//     msg.axis.frarm = axii[1];
-
-//     msg.data.frfoot = state;
-//     msg.axis.frfoot = axii[2];
-
-//     msg.data.flshoulder = state;
-//     msg.axis.flshoulder = axii[3];
-
-//     msg.data.flarm = state;
-//     msg.axis.flarm = axii[4];
-
-//     msg.data.flfoot = state;
-//     msg.axis.flfoot = axii[5];
-
-//     msg.data.blshoulder = state;
-//     msg.axis.blshoulder = axii[6];
-
-//     msg.data.blarm = state;
-//     msg.axis.blarm = axii[7];
-
-//     msg.data.blfoot = state;
-//     msg.axis.blfoot = axii[8];
-
-//     msg.data.brshoulder = state;
-//     msg.axis.brshoulder = axii[9];
-
-//     msg.data.brarm = state;
-//     msg.axis.brarm = axii[10];
-
-//     msg.data.brfoot = state;
-//     msg.axis.brfoot = axii[11];
-
-//     // publisher_axisstate->publish(msg);
-// }
-
-// void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
-// {
-//     if (msg->data)
-//     {
-//         RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Turning on motors");
-//         state_change(1);
-//     } else {
-//         RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Disengaging all motors");
-//         state_change(0);
-//     }
+    publisher_axisstate->publish(data);
     
-// }
+}
 
-// void Motors::publish_joints()
-// {
-//     joint_msgs::msg::OdriveData joints;
+void Motors::publish_joints()
+{
+    joint_msgs::msg::OdriveData joints;
 
-//     joints.angles.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
-//     joints.angles.frshoulder = brushless_motors.find("FRshoulder")->second.get_angle()/rrate;
-//     joints.angles.frarm = brushless_motors.find("FRarm")->second.get_angle()/rrate;
-//     joints.angles.frfoot = brushless_motors.find("FRfoot")->second.get_angle()/rrate;
-//     joints.angles.flshoulder = brushless_motors.find("FLshoulder")->second.get_angle()/rrate;
-//     joints.angles.flarm = brushless_motors.find("FLarm")->second.get_angle()/rrate;
-//     joints.angles.flfoot = brushless_motors.find("FLfoot")->second.get_angle()/rrate;
-//     joints.angles.blshoulder = brushless_motors.find("BLshoulder")->second.get_angle()/rrate;
-//     joints.angles.blarm = brushless_motors.find("BLarm")->second.get_angle()/rrate;
-//     joints.angles.blfoot = brushless_motors.find("BLfoot")->second.get_angle()/rrate;
-//     joints.angles.brshoulder = brushless_motors.find("BRshoulder")->second.get_angle()/rrate;
-//     joints.angles.brarm = brushless_motors.find("BRarm")->second.get_angle()/rrate;
-//     joints.angles.brfoot = brushless_motors.find("BRfoot")->second.get_angle()/rrate;
+    joints.angles.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+    joints.angles.frshoulder = brushless_motors.find("FRshoulder")->second.get_angle()/rrate;
+    joints.angles.frarm = brushless_motors.find("FRarm")->second.get_angle()/rrate;
+    joints.angles.frfoot = brushless_motors.find("FRfoot")->second.get_angle()/rrate;
+    joints.angles.flshoulder = brushless_motors.find("FLshoulder")->second.get_angle()/rrate;
+    joints.angles.flarm = brushless_motors.find("FLarm")->second.get_angle()/rrate;
+    joints.angles.flfoot = brushless_motors.find("FLfoot")->second.get_angle()/rrate;
+    joints.angles.blshoulder = brushless_motors.find("BLshoulder")->second.get_angle()/rrate;
+    joints.angles.blarm = brushless_motors.find("BLarm")->second.get_angle()/rrate;
+    joints.angles.blfoot = brushless_motors.find("BLfoot")->second.get_angle()/rrate;
+    joints.angles.brshoulder = brushless_motors.find("BRshoulder")->second.get_angle()/rrate;
+    joints.angles.brarm = brushless_motors.find("BRarm")->second.get_angle()/rrate;
+    joints.angles.brfoot = brushless_motors.find("BRfoot")->second.get_angle()/rrate;
 
-//     joints.currents.header.stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
-//     joints.currents.frshoulder = brushless_motors.find("FRshoulder")->second.get_current();
-//     joints.currents.frarm = brushless_motors.find("FRarm")->second.get_current();
-//     joints.currents.frfoot = brushless_motors.find("FRfoot")->second.get_current();
-//     joints.currents.flshoulder = brushless_motors.find("FLshoulder")->second.get_current();
-//     joints.currents.flarm = brushless_motors.find("FLarm")->second.get_current();
-//     joints.currents.flfoot = brushless_motors.find("FLfoot")->second.get_current();
-//     joints.currents.blshoulder = brushless_motors.find("BLshoulder")->second.get_current();
-//     joints.currents.blarm = brushless_motors.find("BLarm")->second.get_current();
-//     joints.currents.blfoot = brushless_motors.find("BLfoot")->second.get_current();
-//     joints.currents.brshoulder = brushless_motors.find("BRshoulder")->second.get_current();
-//     joints.currents.brarm = brushless_motors.find("BRarm")->second.get_current();
-//     joints.currents.brfoot = brushless_motors.find("BRfoot")->second.get_current();
+    joints.angles.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+    joints.velocities.frshoulder = brushless_motors.find("FRshoulder")->second.get_velocity_rpm()/rrate;
+    joints.velocities.frarm = brushless_motors.find("FRarm")->second.get_velocity_rpm()/rrate;
+    joints.velocities.frfoot = brushless_motors.find("FRfoot")->second.get_velocity_rpm()/rrate;
+    joints.velocities.flshoulder = brushless_motors.find("FLshoulder")->second.get_velocity_rpm()/rrate;
+    joints.velocities.flarm = brushless_motors.find("FLarm")->second.get_velocity_rpm()/rrate;
+    joints.velocities.flfoot = brushless_motors.find("FLfoot")->second.get_velocity_rpm()/rrate;
+    joints.velocities.blshoulder = brushless_motors.find("BLshoulder")->second.get_velocity_rpm()/rrate;
+    joints.velocities.blarm = brushless_motors.find("BLarm")->second.get_velocity_rpm()/rrate;
+    joints.velocities.blfoot = brushless_motors.find("BLfoot")->second.get_velocity_rpm()/rrate;
+    joints.velocities.brshoulder = brushless_motors.find("BRshoulder")->second.get_velocity_rpm()/rrate;
+    joints.velocities.brarm = brushless_motors.find("BRarm")->second.get_velocity_rpm()/rrate;
+    joints.velocities.brfoot = brushless_motors.find("BRfoot")->second.get_velocity_rpm()/rrate;
 
-//     // publisher_odrive_data->publish(joints);
-// }
+    joints.currents.header.stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
+    joints.currents.frshoulder = brushless_motors.find("FRshoulder")->second.get_current();
+    joints.currents.frarm = brushless_motors.find("FRarm")->second.get_current();
+    joints.currents.frfoot = brushless_motors.find("FRfoot")->second.get_current();
+    joints.currents.flshoulder = brushless_motors.find("FLshoulder")->second.get_current();
+    joints.currents.flarm = brushless_motors.find("FLarm")->second.get_current();
+    joints.currents.flfoot = brushless_motors.find("FLfoot")->second.get_current();
+    joints.currents.blshoulder = brushless_motors.find("BLshoulder")->second.get_current();
+    joints.currents.blarm = brushless_motors.find("BLarm")->second.get_current();
+    joints.currents.blfoot = brushless_motors.find("BLfoot")->second.get_current();
+    joints.currents.brshoulder = brushless_motors.find("BRshoulder")->second.get_current();
+    joints.currents.brarm = brushless_motors.find("BRarm")->second.get_current();
+    joints.currents.brfoot = brushless_motors.find("BRfoot")->second.get_current();
+
+    publisher_odrive_data->publish(joints);
+}
 
 
 
-// void Motors::reboot_odrive()
-// {   
-//     joint_msgs::msg::CanInt msg;
-//     uint8_t axii[12];
-//     for (uint8_t i = 0; i < 12 ; i++)
-//     {
-//         uint8_t axisid = brushless_motors.find(names[i])->second.get_axisID();
-//         axii[i] = axisid;
-//     }
+void Motors::reboot_odrive()
+{   
+    joint_msgs::msg::JointsBool msg;
 
-//     msg.axis.frshoulder = axii[0];
-//     msg.axis.frarm = axii[1];
-//     msg.axis.frfoot = axii[2];
-//     msg.axis.flshoulder = axii[3];
-//     msg.axis.flarm = axii[4];
-//     msg.axis.flfoot = axii[5];
-//     msg.axis.blshoulder = axii[6];
-//     msg.axis.blarm = axii[7];
-//     msg.axis.blfoot = axii[8];
-//     msg.axis.brshoulder = axii[9];
-//     msg.axis.brarm = axii[10];
-//     msg.axis.brfoot = axii[11];
+    msg.frshoulder = true;
+    msg.frarm = true;
+    msg.frfoot = true;
+    msg.flshoulder = true;
+    msg.flarm = true;
+    msg.flfoot = true;
+    msg.blshoulder = true;
+    msg.blarm = true;
+    msg.blfoot = true;
+    msg.brshoulder = true;
+    msg.brarm = true;
+    msg.brfoot = true;
 
-//     // publisher_reboot->publish(msg);
-// }
+    publisher_reboot->publish(msg);
+}
 
-// void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
-// {   
-//     float angles[12] = {joints->frshoulder,
-//                         joints->frarm,
-//                         joints->frfoot,
-//                         joints->flshoulder, 
-//                         joints->flarm,
-//                         joints->flfoot,
-//                         joints->blshoulder,
-//                         joints->blarm,
-//                         joints->blfoot,
-//                         joints->brshoulder,
-//                         joints->brarm,
-//                         joints->brfoot};
+void Motors::request(const joint_msgs::msg::Joints::SharedPtr joints)
+{   
+    float angles[12] = {joints->frshoulder,
+                        joints->frarm,
+                        joints->frfoot,
+                        joints->flshoulder, 
+                        joints->flarm,
+                        joints->flfoot,
+                        joints->blshoulder,
+                        joints->blarm,
+                        joints->blfoot,
+                        joints->brshoulder,
+                        joints->brarm,
+                        joints->brfoot};
 
-//     joint_msgs::msg::CanFloat msg;
-//     float posii[12];
-//     uint8_t axii[12];
+    joint_msgs::msg::Joints msg;
+    float posii[12];
     
-//     for (uint8_t i = 0; i < 12 ; i++)
-//     {   
-//         float angle = angles[i];
-//         if (joints->check_max){
-//             if (angle > brushless_motors.find(names[i])->second.get_joint_max())
-//             {
-//                 angle = brushless_motors.find(names[i])->second.get_joint_max();
-//                 std::cout << "Joint " << names[i] << " is too high" << std::endl;
-//             } else if (angle < brushless_motors.find(names[i])->second.get_joint_min())
-//             {
-//                 angle = brushless_motors.find(names[i])->second.get_joint_min();
-//                 std::cout << "Joint " << names[i] << " is too low" << std::endl;
-//             }
-//         }
-//         angle = angle * rrate;
-//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-//         float position = brushless_motors.find(names[i])->second.get_input_from_angle(angle);
+    for (uint8_t i = 0; i < 12 ; i++)
+    {   
+        float angle = angles[i];
+        if (joints->checkmax){
+            if (angle > brushless_motors.find(names[i])->second.get_joint_max())
+            {
+                angle = brushless_motors.find(names[i])->second.get_joint_max();
+                std::cout << "Joint " << names[i] << " is too high" << std::endl;
+            } else if (angle < brushless_motors.find(names[i])->second.get_joint_min())
+            {
+                angle = brushless_motors.find(names[i])->second.get_joint_min();
+                std::cout << "Joint " << names[i] << " is too low" << std::endl;
+            }
+        }
+        angle = angle * rrate;
+        float position = brushless_motors.find(names[i])->second.get_input_from_angle(angle);
 
-//         axii[i] = axis;
-//         posii[i] = position;
-//     } 
+        posii[i] = position;
+    } 
 
-//     msg.data.frshoulder = posii[0];
-//     msg.axis.frshoulder = axii[0];
+    msg.frshoulder = posii[0];
+    msg.frarm = posii[1];
+    msg.frfoot = posii[2];
+    msg.flshoulder = posii[3];
+    msg.flarm = posii[4];
+    msg.flfoot = posii[5];
+    msg.blshoulder = posii[6];
+    msg.blarm = posii[7];
+    msg.blfoot = posii[8];
+    msg.brshoulder = posii[9];
+    msg.brarm = posii[10];
+    msg.brfoot = posii[11];
 
-//     msg.data.frarm = posii[1];
-//     msg.axis.frarm = axii[1];
-
-//     msg.data.frfoot = posii[2];
-//     msg.axis.frfoot = axii[2];
-
-//     msg.data.flshoulder = posii[3];
-//     msg.axis.flshoulder = axii[3];
-
-//     msg.data.flarm = posii[4];
-//     msg.axis.flarm = axii[4];
-
-//     msg.data.flfoot = posii[5];
-//     msg.axis.flfoot = axii[5];
-
-//     msg.data.blshoulder = posii[6];
-//     msg.axis.blshoulder = axii[6];
-
-//     msg.data.blarm = posii[7];
-//     msg.axis.blarm = axii[7];
-
-//     msg.data.blfoot = posii[8];
-//     msg.axis.blfoot = axii[8];
-
-//     msg.data.brshoulder = posii[9];
-//     msg.axis.brshoulder = axii[9];
-
-//     msg.data.brarm = posii[10];
-//     msg.axis.brarm = axii[10];
-
-//     msg.data.brfoot = posii[11];
-//     msg.axis.brfoot = axii[11];
-
-//     // publisher_request->publish(msg);
-// }
-
-// void Motors::change_max_current(const joint_msgs::msg::Joints::SharedPtr max_currents)
-// {
-//     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Changing MAX currents");
-//     float currents[12] = {max_currents->frshoulder,
-//                         max_currents->frarm,
-//                         max_currents->frfoot,
-//                         max_currents->flshoulder, 
-//                         max_currents->flarm,
-//                         max_currents->flfoot,
-//                         max_currents->blshoulder,
-//                         max_currents->blarm,
-//                         max_currents->blfoot,
-//                         max_currents->brshoulder,
-//                         max_currents->brarm,
-//                         max_currents->brfoot};
-
-//     joint_msgs::msg::CanFloat msg;
-//     uint8_t axii[12];
-    
-//     for (uint8_t i = 0; i < 12 ; i++)
-//     {   
-//         uint8_t axis = brushless_motors.find(names[i])->second.get_axisID();
-
-//         axii[i] = axis;
-//     }
-
-//     msg.data.frshoulder = currents[0];
-//     msg.axis.frshoulder = axii[0];
-
-//     msg.data.frarm = currents[1];
-//     msg.axis.frarm = axii[1];
-
-//     msg.data.frfoot = currents[2];
-//     msg.axis.frfoot = axii[2];
-
-//     msg.data.flshoulder = currents[3];
-//     msg.axis.flshoulder = axii[3];
-
-//     msg.data.flarm = currents[4];
-//     msg.axis.flarm = axii[4];
-
-//     msg.data.flfoot = currents[5];
-//     msg.axis.flfoot = axii[5];
-
-//     msg.data.blshoulder = currents[6];
-//     msg.axis.blshoulder = axii[6];
-
-//     msg.data.blarm = currents[7];
-//     msg.axis.blarm = axii[7];
-
-//     msg.data.blfoot = currents[8];
-//     msg.axis.blfoot = axii[8];
-
-//     msg.data.brshoulder = currents[9];
-//     msg.axis.brshoulder = axii[9];
-
-//     msg.data.brarm = currents[10];
-//     msg.axis.brarm = axii[10];
-
-//     msg.data.brfoot = currents[11];
-//     msg.axis.brfoot = axii[11];
-
-//     // publisher_maxC->publish(msg);
-// }
-
+    publisher_request->publish(msg);
+}
 
 
 int main(int argc, char * argv[])

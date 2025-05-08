@@ -30,12 +30,13 @@ class Jointlistener(Node):
 
         self.data_IMU = self.create_subscription(
             Imu,
-            '/bno055/imu',
+            '/imu',
             self.imu_callback,
             1000)
         self.data_IMU  # prevent unused variable warning
 
         self.angles = []
+        self.velocities = []
         self.currents = []
         self.commands = []
         self.imu = []
@@ -46,6 +47,7 @@ class Jointlistener(Node):
         self.directoryLoc = os.path.join(self.dataLoc,timestr)
         self.controlLocation = os.path.join(self.directoryLoc, 'control.csv')
         self.measuredLocation = os.path.join(self.directoryLoc, 'measured.csv')
+        self.measuredVelocity = os.path.join(self.directoryLoc, 'measured_velocity.csv')
         self.currentLocation = os.path.join(self.directoryLoc, 'currents.csv')
         self.imulocation = os.path.join(self.directoryLoc, 'imu.csv')
 
@@ -55,6 +57,12 @@ class Jointlistener(Node):
                           msg.angles.frshoulder, msg.angles.frarm, msg.angles.frfoot,
                           msg.angles.blshoulder, msg.angles.blarm, msg.angles.blfoot,
                           msg.angles.brshoulder, msg.angles.brarm, msg.angles.brfoot])
+        
+        self.velocities.append([msg.angles.header.stamp.sec + msg.angles.header.stamp.nanosec/1000000000,
+                          msg.velocities.flshoulder, msg.velocities.flarm, msg.velocities.flfoot,
+                          msg.velocities.frshoulder, msg.velocities.frarm, msg.velocities.frfoot,
+                          msg.velocities.blshoulder, msg.velocities.blarm, msg.velocities.blfoot,
+                          msg.velocities.brshoulder, msg.velocities.brarm, msg.velocities.brfoot])
         
         self.currents.append([msg.angles.header.stamp.sec + msg.angles.header.stamp.nanosec/1000000000,
                           msg.currents.flshoulder, msg.currents.flarm, msg.currents.flfoot,
@@ -73,7 +81,6 @@ class Jointlistener(Node):
     
     def imu_callback(self, msg):
         self.imu.append([msg.header.stamp.sec + msg.header.stamp.nanosec/1000000000,
-                          msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w,
                           msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z,
                           msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z])
     
@@ -109,8 +116,17 @@ class Jointlistener(Node):
                 msg = msg[:-1] + '\n'
                 file.write(msg)
         
+        with open(self.measuredVelocity,'w') as file:
+            file.write(header)
+            for dataset in self.velocities:
+                msg = ''
+                for i in range(13):
+                    msg += f'{dataset[i]},'
+                msg = msg[:-1] + '\n'
+                file.write(msg)
+        
         with open(self.imulocation,'w') as file:
-            file.write('time_start,or_x,or_y,or_z,or_w,av_x,av_y,av_z,la_x,la_y,la_z\n')
+            file.write('time_start,av_x,av_y,av_z,la_x,la_y,la_z\n')
             for dataset in self.imu:
                 msg = ''
                 for i in dataset:

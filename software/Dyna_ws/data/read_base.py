@@ -334,24 +334,18 @@ plt.grid()
 
 ############# POTENCIA TOTAL ##############
 
-#time_start,or_x,or_y,or_z,or_w,av_x,av_y,av_z,la_x,la_y,la_z
-roll = []
-pitch = []
-yaw = []
-
-for orix, oriy, oriz, oriw in zip(imu['or_x'], imu['or_y'], imu['or_z'], imu['or_w']):
-    a = np.arctan2(2*(oriw * orix + oriy*oriz), 1 - 2*(orix**2 + oriy**2))
-    b = -np.pi/2 + 2*np.arctan2(np.sqrt(1 + 2 * (oriw * oriy - orix * oriz)), np.sqrt(1 - 2 * (oriw * oriy - orix*oriz)))
-    c = np.arctan2(2 * (oriw * oriz + orix * oriy), 1 - 2*(oriy**2 + oriz**2))
-    roll.append(-b*180/np.pi)
-    pitch.append(a*180/np.pi)
-    yaw.append(c*180/np.pi)
+#time_start,av_x,av_y,av_z,la_x,la_y,la_z
 
 plt.figure()
-plt.plot(imu['time_start'], roll, label = 'roll')
-plt.plot(imu['time_start'], pitch, label = 'pitch')
-plt.plot(imu['time_start'], yaw, label = 'yaw')
+plt.plot(imu['time_start'], imu['la_x'], label = 'linear acceleration x')
+plt.plot(imu['time_start'], imu['la_y'], label = 'linear acceleration y')
+plt.plot(imu['time_start'], imu['la_z'], label = 'linear acceleration z')
+plt.legend()
 
+plt.figure()
+plt.plot(imu['time_start'], imu['av_x'], label = 'angular velocity x')
+plt.plot(imu['time_start'], imu['av_y'], label = 'angular velocity y')
+plt.plot(imu['time_start'], imu['av_z'], label = 'angular velocity z')
 plt.legend()
 
 ############# SHOW ##############

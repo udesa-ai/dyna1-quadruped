@@ -1,6 +1,6 @@
 #include "brushless.hpp"
 
-BrushlessMotor::BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string name, float joint_max, float joint_min)
+BrushlessMotor::BrushlessMotor(uint8_t motorn, float pos0, uint8_t axisID, int8_t direc, const std::string& name, float joint_max, float joint_min)
     : name(name), mnumber(motorn), pos0(pos0), direc(direc), axisId(axisID), joint_max(joint_max), joint_min(joint_min)
     {
         pos_estimate = 0;
@@ -35,6 +35,7 @@ float BrushlessMotor::get_angle() {
     float angle = pos_to_angle(position);
     return angle;
 }
+
 
 float BrushlessMotor::get_input_from_pos(float position) {
     return direc * position;

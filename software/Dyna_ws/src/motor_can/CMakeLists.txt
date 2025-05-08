@@ -28,8 +28,11 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+add_library(brushless_motor
+  src/brushless.cpp
+)
 
-add_executable(motores src/motors.cpp src/brushless.cpp src/jsoncpp.cpp)
+add_executable(motores src/motors.cpp src/brushless.cpp)
 ament_target_dependencies(motores rclcpp joint_msgs std_msgs)
 
 

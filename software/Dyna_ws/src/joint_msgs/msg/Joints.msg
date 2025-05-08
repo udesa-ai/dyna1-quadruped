@@ -13,3 +13,4 @@ float32 brarm
 float32 brfoot
 string motion
 string movement
+bool checkmax

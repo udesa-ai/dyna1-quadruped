@@ -1,2 +1,3 @@
 joint_msgs/Joints angles
+joint_msgs/Joints velocities
 joint_msgs/Joints currents

@@ -1,0 +1,12 @@
+Estimates frshoulder
+Estimates frarm
+Estimates frfoot
+Estimates flshoulder
+Estimates flarm
+Estimates flfoot
+Estimates blshoulder
+Estimates blarm
+Estimates blfoot
+Estimates brshoulder
+Estimates brarm
+Estimates brfoot

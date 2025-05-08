@@ -10,6 +10,7 @@
 #include "teleop_msgs/msg/joy_buttons.hpp"
 #include "custom_sensor_msgs/msg/im_udata.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "error_msgs/msg/error.hpp"
 #include <chrono>
 #include "trajectories.hpp"
@@ -51,6 +52,7 @@ private:
     std::vector<float> ClearanceHeight_LIMITS = {0.0f, 0.0f};
     std::vector<float> PenetrationDepth_LIMITS = {0.0f, 0.0f};
     MatrixJoint joint_angles;
+    MatrixJoint joint_velocities_rpm;
     MatrixJoint joint_currents;
     bool readflag_data;
     bool config_done;
@@ -84,7 +86,7 @@ private:
     rclcpp::Subscription<custom_sensor_msgs::msg::IMUdata>::SharedPtr sub_imu;
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr ja_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr motor_state;
-    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publish_max_currents;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publish_max_currents;
     Trajectories traj;
     rclcpp::TimerBase::SharedPtr timer_;
     MatrixJoint adder;

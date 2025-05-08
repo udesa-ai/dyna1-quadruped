@@ -2,6 +2,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include "joint_msgs/msg/joints.hpp"
+#include "joint_msgs/msg/joint_estimates.hpp"
 #include "joint_msgs/msg/joints_bool.hpp"
 #include <std_msgs/msg/float32.hpp>
 #include <boost/asio.hpp>
@@ -27,10 +28,7 @@ public:
           read_buffer_{} {
 
         publisher_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
-        publisher_motor_positions_ = this->create_publisher<joint_msgs::msg::Joints>("motor_positions", 10);
-        publisher_motor_velocities_ = this->create_publisher<joint_msgs::msg::Joints>("motor_velocities", 10);
-        publisher_motor_currents_ = this->create_publisher<joint_msgs::msg::Joints>("motor_currents", 10);
-
+        publisher_motor_data_ = this->create_publisher<joint_msgs::msg::JointEstimates>("motor_data", 48);
 
         subscriber_joints = this->create_subscription<joint_msgs::msg::Joints>(
             "request_positions", 10,
@@ -180,117 +178,62 @@ private:
 
                 // RCLCPP_INFO(this->get_logger(), "Published IMU data: [%.2f, %.2f, %.2f]", msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z);
 
-                joint_msgs::msg::Joints motor_positions;
-                joint_msgs::msg::Joints motor_velocities;
-                joint_msgs::msg::Joints motor_currents;
-                
+                joint_msgs::msg::JointEstimates motor_data;
+
                 uint8_t pos_start = 6;
                 uint8_t vel_start = 18;
                 uint8_t curr_start = 30;
 
-                motor_positions.frshoulder = floats[0 + pos_start];
-                motor_velocities.frshoulder = floats[0 + vel_start];
-                motor_currents.frshoulder = floats[0 + curr_start];
+                motor_data.frshoulder.position = floats[0 + pos_start];
+                motor_data.frshoulder.velocity = floats[0 + vel_start];
+                motor_data.frshoulder.current = floats[0 + curr_start];
 
-                motor_positions.frarm = floats[1 + pos_start];
-                motor_velocities.frarm = floats[1 + vel_start];
-                motor_currents.frarm = floats[1 + curr_start];
+                motor_data.frarm.position = floats[1 + pos_start];
+                motor_data.frarm.velocity = floats[1 + vel_start];
+                motor_data.frarm.current = floats[1 + curr_start];
 
-                motor_positions.frfoot = floats[2 + pos_start];
-                motor_velocities.frfoot = floats[2 + vel_start];
-                motor_currents.frfoot = floats[2 + curr_start];                
+                motor_data.frfoot.position = floats[2 + pos_start];
+                motor_data.frfoot.velocity = floats[2 + vel_start];
+                motor_data.frfoot.current = floats[2 + curr_start];                
 
-                motor_positions.flshoulder = floats[3 + pos_start];
-                motor_velocities.flshoulder = floats[3 + vel_start];
-                motor_currents.flshoulder = floats[3 + curr_start];
+                motor_data.flshoulder.position = floats[3 + pos_start];
+                motor_data.flshoulder.velocity = floats[3 + vel_start];
+                motor_data.flshoulder.current = floats[3 + curr_start];
                 
-                motor_positions.flarm = floats[4 + pos_start];
-                motor_velocities.flarm = floats[4 + vel_start];
-                motor_currents.flarm = floats[4 + curr_start];
+                motor_data.flarm.position = floats[4 + pos_start];
+                motor_data.flarm.velocity = floats[4 + vel_start];
+                motor_data.flarm.current = floats[4 + curr_start];
 
-                motor_positions.flfoot = floats[5 + pos_start];
-                motor_velocities.flfoot = floats[5 + vel_start];
-                motor_currents.flfoot = floats[5 + curr_start];
+                motor_data.flfoot.position = floats[5 + pos_start];
+                motor_data.flfoot.velocity = floats[5 + vel_start];
+                motor_data.flfoot.current = floats[5 + curr_start];
                 
-                motor_positions.blshoulder = floats[6 + pos_start];
-                motor_velocities.blshoulder = floats[6 + vel_start];
-                motor_currents.blshoulder = floats[6 + curr_start];
+                motor_data.blshoulder.position = floats[6 + pos_start];
+                motor_data.blshoulder.velocity = floats[6 + vel_start];
+                motor_data.blshoulder.current = floats[6 + curr_start];
 
-                motor_positions.blarm = floats[7 + pos_start];
-                motor_velocities.blarm = floats[7 + vel_start];
-                motor_currents.blarm = floats[7 + curr_start];
+                motor_data.blarm.position = floats[7 + pos_start];
+                motor_data.blarm.velocity = floats[7 + vel_start];
+                motor_data.blarm.current = floats[7 + curr_start];
 
-                motor_positions.blfoot = floats[8 + pos_start];
-                motor_velocities.blfoot = floats[8 + vel_start];
-                motor_currents.blfoot = floats[8 + curr_start];
+                motor_data.blfoot.position = floats[8 + pos_start];
+                motor_data.blfoot.velocity = floats[8 + vel_start];
+                motor_data.blfoot.current = floats[8 + curr_start];
 
-                motor_positions.brshoulder = floats[9 + pos_start];
-                motor_velocities.brshoulder = floats[9 + vel_start];
-                motor_currents.brshoulder = floats[9 + curr_start];
+                motor_data.brshoulder.position = floats[9 + pos_start];
+                motor_data.brshoulder.velocity = floats[9 + vel_start];
+                motor_data.brshoulder.current = floats[9 + curr_start];
 
-                motor_positions.brarm = floats[10 + pos_start];
-                motor_velocities.brarm = floats[10 + vel_start];
-                motor_currents.brarm = floats[10 + curr_start];
+                motor_data.brarm.position = floats[10 + pos_start];
+                motor_data.brarm.velocity = floats[10 + vel_start];
+                motor_data.brarm.current = floats[10 + curr_start];
 
-                motor_positions.brfoot = floats[11 + pos_start];
-                motor_velocities.brfoot = floats[11 + vel_start];
-                motor_currents.brfoot = floats[11 + curr_start];
+                motor_data.brfoot.position = floats[11 + pos_start];
+                motor_data.brfoot.velocity = floats[11 + vel_start];
+                motor_data.brfoot.current = floats[11 + curr_start];
 
-                publisher_motor_positions_->publish(motor_positions);
-                publisher_motor_velocities_->publish(motor_velocities);
-                publisher_motor_currents_->publish(motor_currents);
+                publisher_motor_data_->publish(motor_data);
                 // RCLCPP_INFO(this->get_logger(), "Published motor positions, velocities, and currents");                
-
-                break;
-            }
-
-            case 4: { // debug
-                if (length != 48) {
-                    std::cout << "Invalid payload length for topic 1: " << length << std::endl;
-                    return;
-                }
-                std::vector<float> floats;
-                for (size_t i = 0; i < length; i += 4) {
-                    uint32_t temp;
-                    std::memcpy(&temp, payload + i, sizeof(uint32_t));  // Copy bytes into a 32-bit temp
-                    //temp = swap_bytes(temp);  // Swap bytes if necessary (if endian mismatch)
-                    
-                    float value;
-                    std::memcpy(&value, &temp, sizeof(float));  // Convert the 32-bit temp to float
-                    
-                    floats.push_back(value);
-                }
-
-                joint_msgs::msg::Joints motor_positions;
-                
-                uint8_t pos_start = 0;
-
-                motor_positions.frshoulder = floats[0 + pos_start];
-
-                motor_positions.frarm = floats[1 + pos_start];
-
-                motor_positions.frfoot = floats[2 + pos_start];
-
-                motor_positions.flshoulder = floats[3 + pos_start];
-                
-                motor_positions.flarm = floats[4 + pos_start];
-                
-                motor_positions.flfoot = floats[5 + pos_start];
-               
-                motor_positions.blshoulder = floats[6 + pos_start];
-                
-                motor_positions.blarm = floats[7 + pos_start];
-    
-                motor_positions.blfoot = floats[8 + pos_start];
-                
-                motor_positions.brshoulder = floats[9 + pos_start];
-                
-                motor_positions.brarm = floats[10 + pos_start];
-                
-                motor_positions.brfoot = floats[11 + pos_start];
-                
-                publisher_motor_positions_->publish(motor_positions);
-                // RCLCPP_INFO(this->get_logger(), "Published motor positions and velocities");                
 
                 break;
             }
@@ -489,9 +432,7 @@ private:
     }
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_imu_;
-    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_positions_;
-    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_velocities_;
-    rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr publisher_motor_currents_;
+    rclcpp::Publisher<joint_msgs::msg::JointEstimates>::SharedPtr publisher_motor_data_;
 
     rclcpp::Subscription<joint_msgs::msg::Joints>::SharedPtr subscriber_joints;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr subscriber_max_current;
