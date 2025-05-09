@@ -53,7 +53,7 @@ public:
 
 
         std::string port_name = "/dev/ttyTHS1";
-        int baud_rate = 115200;
+        int baud_rate = 921600;
 
         boost::system::error_code ec;
         serial_port_.open(port_name, ec);
@@ -159,7 +159,7 @@ private:
                 for (size_t i = 0; i < length; i += 4) {
                     uint32_t temp;
                     std::memcpy(&temp, payload + i, sizeof(uint32_t));  // Copy bytes into a 32-bit temp
-                    temp = swap_bytes(temp);  // Swap bytes if necessary (if endian mismatch)
+                    // temp = swap_bytes(temp);  // Swap bytes if necessary (if endian mismatch)
                     
                     float value;
                     std::memcpy(&value, &temp, sizeof(float));  // Convert the 32-bit temp to float
@@ -339,8 +339,9 @@ private:
         std::vector<uint8_t> payload;
         payload.reserve(sizeof(uint16_t)); // Reserve 4 bytes for efficiency
 
-        payload.push_back(static_cast<uint8_t>((bitfield >> 8) & 0xFF)); // upper byte
         payload.push_back(static_cast<uint8_t>(bitfield & 0xFF));        // lower byte
+        payload.push_back(static_cast<uint8_t>((bitfield >> 8) & 0xFF)); // upper byte
+        
         
         uart_write_callback(payload, topic_id);  // Send the payload
     }
