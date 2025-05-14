@@ -16,16 +16,26 @@ def generate_launch_description():
         'MAX_CURRENT',
         default_value='30'
     )
+    
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
-    inter = Node(
-            package='can_interface',
+
+    uart_bridge = Node(
+            package='uart_bridge',
             namespace='',
-            executable='interface',
-            name='CAN_Interfacec',
+            executable='uart_bridge_node',
+            name='UARTbridge',
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
+
+    # inter = Node(
+    #         package='can_interface',
+    #         namespace='',
+    #         executable='interface',
+    #         name='CAN_Interfacec',
+    #         parameters=[{'use_sim_time': use_sim_time}],
+    #         output="screen")
 
     motores = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -33,13 +43,15 @@ def generate_launch_description():
         )
     )
 
-    can_bridge = Node(
-            package='ros2socketcan_bridge',
-            namespace='',
-            executable='ros2can_bridge',
-            name='CANbridge',
-            parameters=[{'use_sim_time': use_sim_time}],
-            output="screen")
+    # can_bridge = Node(
+    #         package='ros2socketcan_bridge',
+    #         namespace='',
+    #         executable='ros2can_bridge',
+    #         name='CANbridge',
+    #         parameters=[{'use_sim_time': use_sim_time}],
+    #         output="screen")
+
+    
  
 
     control = IncludeLaunchDescription(
@@ -52,24 +64,14 @@ def generate_launch_description():
         launch_arguments={'MAX_CURRENT':MAX_CURRENT}.items()
     )
 
-    imu = IncludeLaunchDescription(
-    	PythonLaunchDescriptionSource(
-            [
-                os.path.join(get_package_share_directory('bno055'), 'launch'),
-             			  '/bno055.launch.py'
-            ]
-        )
-    )
-
-    state_machine = Node(
-            package='dyna_sm',
-            namespace='',
-            executable='state_machine',
-            output="screen",
-            name='state_machine',
-            parameters=[
-                {"frequency": 160.0}
-            ])
+    # imu = IncludeLaunchDescription(
+    # 	PythonLaunchDescriptionSource(
+    #         [
+    #             os.path.join(get_package_share_directory('bno055'), 'launch'),
+    #          			  '/bno055.launch.py'
+    #         ]
+    #     )
+    # )
 
     # trace = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(
@@ -87,13 +89,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         MAX_CURRENT_launch_arg,
-        inter,
-        # trace,
-        imu,
+        uart_bridge,
         motores,
-        can_bridge,
-        # state_machine,
         control,
-        # bag,
-        # imu_translator
         safety])
