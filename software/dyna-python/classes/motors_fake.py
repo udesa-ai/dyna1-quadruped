@@ -1,97 +1,54 @@
+from classes.brushless import BrushlessMotor
+import json
 import time
 
 class Motors:
 
     def __init__(self,):
+        with open('config.json','r') as f:
+            data = json.load(f)
+        
+        self.data = data
 
         self.rrate = 9
 
         self.brushless = {}
 
-        for leg in ['FR', 'FL', 'BL', 'BR']:       
-            self.brushless[leg+'shoulder'] = 'motor'
-            self.brushless[leg+'arm'] = 'motor'
-            self.brushless[leg+'foot'] = 'motor'
+        for leg in ['FR', 'FL', 'BL', 'BR']:
+            leg_data = data[leg]
+            
+            self.brushless[leg+'shoulder'] = BrushlessMotor(leg_data["motor0"]["motorN"],
+                                                            leg_data["motor0"]["iOffset"],
+                                                            leg_data["motor0"]["axisID"],
+                                                            leg_data["motor0"]["direction"],
+                                                            leg+'shoulder')
+
+            self.brushless[leg+'arm'] = BrushlessMotor(leg_data["motor1"]["motorN"],
+                                                       leg_data["motor1"]["iOffset"],
+                                                       leg_data["motor1"]["axisID"],
+                                                       leg_data["motor1"]["direction"],
+                                                       leg+'arm')
+
+            self.brushless[leg+'foot'] = BrushlessMotor(leg_data["motor2"]["motorN"],
+                                                        leg_data["motor2"]["iOffset"],
+                                                        leg_data["motor2"]["axisID"],
+                                                        leg_data["motor2"]["direction"],
+                                                        leg+'foot')
         
         self.names = self.brushless.keys()
-
-    def reboot_odrive(self, motors=None):
-        print('Done!')
     
-
-    def get_errors(self,):
-        print('all cool')
-
-
-    def find_index(self, motors):
-        print('done')
+    def set_motor_encoders(self, motors):
+        for motor in motors:
+            self.brushless[motor].set_encoder_measurement(motors[motor])
+            # print(f'{motor} set to {motors[motor]}')
 
 
-    def get_motor_positions(self, motors, n=1):
-        pass
+    def get_motor_positions(self, motors):
+        for motor in motors:
+            pos = self.brushless[motor].get_position()
+            motors[motor] = pos
 
-
-    def set_zero_positions(self, motors):
-        print('done')
-
-    def calibrate_pos0(self,):
-        print('All motors calibrated and config file updated!')
-
-    def get_angle(self, motors, n=1):
-        motors['FLshoulder'] = -10
-        motors['FLarm'] = -50
-        motors['FLfoot'] = 70
-        motors['FRshoulder'] = 10
-        motors['FRarm'] = -50
-        motors['FRfoot'] = 70
-        motors['BLshoulder'] = -10
-        motors['BLarm'] = -50
-        motors['BLfoot'] = 70
-        motors['BRshoulder'] = -10
-        motors['BRarm'] = -50
-        motors['BRfoot'] = 70
-
-
-    def turn_on(self, motors = None):
-        print('motors on')
-    
-
-    def turn_off(self, motors = None):
-        print('motors off')
-    
-
-    def go_to_ang(self, motors):
-        pass
-
-
-    def set_position_control(self, motors, filter):
-        print('Done setting position control')
-
-    def get_current(self, motors):
-        pass
-
-
-    def get_torques(self, motors):
-        pass    
-
-    def set_torque_control(self, motors, ramp):
-        print('Done setting torque control')
-
-
-    def go_to_torque(self, motors):
-        pass
-
-
-    def set_max_currents(self, motors):
-        print('Done setting max current')
-
-
-    def get_angle_velrpm(self,motors):
-        pass
-
-
-    def get_vel_rpm(self, motors):
-        pass
-
-    def calibrate_motors(self, motors):
-        print('All motors calibrated and config file updated!')
+    def get_angle(self, motors):
+        for motor in motors:
+            angle = self.brushless[motor].get_angle()/self.rrate
+            motors[motor] = angle

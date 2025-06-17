@@ -53,7 +53,7 @@ public:
 
 
         std::string port_name = "/dev/ttyTHS1";
-        int baud_rate = 921600;
+        int baud_rate = 460800;
 
         boost::system::error_code ec;
         serial_port_.open(port_name, ec);
