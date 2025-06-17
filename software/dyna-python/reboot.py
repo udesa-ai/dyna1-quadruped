@@ -8,8 +8,6 @@ parser.add_argument('odrive', metavar='N', type=str, nargs='*')
 
 args = parser.parse_args()
 
-debugging = False
-
 uart = UARTBridge()
 uart.open()
 
@@ -21,23 +19,16 @@ if len(args.odrive) == 0:
         input(f'Ready to reboot odrive of {motor}?')
         uart.send_reboot(odrives[motor])
         print('Done!')
-
-        if debugging:
-            time.sleep(1)
-            while uart.ser.in_waiting > 0:
-                data = uart.ser.read(uart.ser.in_waiting)
-                print(" ".join(f"{b:02X}" for b in data))
 else:
-    input(f'Ready to reboot odrive of {motor}?')
-    send_reboot(odrives[args.odrive])
-    print('Done!')
+    for motor in args.odrive:
+        if motor not in odrives:
+            print(f'Odive {motor} not found')
+            continue
+        input(f'Ready to reboot odrive of {motor}?')
+        uart.send_reboot(odrives[motor])
+        print('Done!')
 
-    if debugging:
-        time.sleep(1)
-        while uart.ser.in_waiting > 0:
-            data = uart.ser.read(uart.ser.in_waiting)
-            print(" ".join(f"{b:02X}" for b in data))
-
+    
 time.sleep(1)
 uart.close()
 print('Uart closed')

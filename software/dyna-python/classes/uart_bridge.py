@@ -50,13 +50,55 @@ class UARTBridge:
         return crc
 
     def send_on_off(self, state, motor = None):
+        state = 1 if state == 'on' else 0
         if motor == None:
-            self.send_bits(7, [1]*12 if state == 'on' else [0]*12)
+            for m in self.motors.values():
+                self.send_motor_state(m, state)
         else:
-            motors = [0]*12
-            if state == 'on':
-                motors[motor] = 1
-            self.send_bits(7, motors)
+            self.send_motor_state(self.motors[motor], state)
+
+    def send_motor_state(self, motor, state):
+        # message is now two bytes, first is motor number, second is state (0 or 1)
+
+        # payload is two bytes: motor number and state
+        # both motor number and state are integers (uint8_t) and are the arguments of the function
+        payload = [
+            motor & 0xFF,  # motor number (uint8_t)
+            state & 0xFF   # state (uint8_t)    
+        ]
+
+        frame = []
+        frame.append(ord('>'))
+        frame.append(ord('>'))
+        frame.append(ord('>'))
+
+        # id is 7 sent as one byte
+        id = 0x07
+        frame.append(id)
+
+        frame.append(0x00)
+
+        # Longitud del payload
+        frame.append((2 >> 8) & 0xFF)  # len_high
+        frame.append(2 & 0xFF)         # len_low
+
+        # Placeholder para el CRC
+        frame.append(0x00)  # CRC high
+        frame.append(0x00)  # CRC low
+
+        # Agregar el payload
+        frame.extend(payload)
+
+        # Calcular el CRC desde topic_id hasta fin de payload
+        data_for_crc = bytes(frame[9:])  # desde index 9 hasta el final
+        crc = self.calculate_crc(data_for_crc)
+
+        frame[7] = (crc >> 8) & 0xFF
+        frame[8] = crc & 0xFF
+
+        # Convertir a bytes para enviar (string en C++, bytes en Python)
+        frame_bytes = bytes(frame)
+        self.ser.write(frame_bytes)
 
     def send_reboot(self, motors):
         numbers = [0]*12

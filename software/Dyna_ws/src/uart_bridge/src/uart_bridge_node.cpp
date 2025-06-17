@@ -317,7 +317,20 @@ private:
 
     void request_motor_state(const joint_msgs::msg::JointsBool::SharedPtr msg) {
         uint8_t topic_id = 0x07;
-        send_bits(msg, topic_id);
+        std::vector<bool> states = {
+            msg->frshoulder, msg->frarm, msg->frfoot,
+            msg->flshoulder, msg->flarm, msg->flfoot,
+            msg->blshoulder, msg->blarm, msg->blfoot,
+            msg->brshoulder, msg->brarm, msg->brfoot
+        };
+
+        // Sending message with byte for motor and byte for state for all motors
+        for (uint8_t i = 0; i < 12; ++i) {
+            // cast bool to uint8_t
+            uint8_t motor_byte = states[i] ? 0x01 : 0x00;
+            std::vector<uint8_t> payload = {i, motor_byte};
+            uart_write_callback(payload, topic_id);  // Send the payload
+        }
     }
 
     void send_bits(const joint_msgs::msg::JointsBool::SharedPtr msg, uint8_t topic_id) {
