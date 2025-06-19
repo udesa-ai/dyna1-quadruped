@@ -30,6 +30,7 @@ class UARTBridge:
 
         self.SYNC = b'>>>'
 
+
     def open(self):
         self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
 
@@ -107,6 +108,8 @@ class UARTBridge:
         # Convertir a bytes para enviar (string en C++, bytes en Python)
         frame_bytes = bytes(frame)
         self.ser.write(frame_bytes)
+        # print frame bytes for debugging
+        print(frame_bytes.hex())
 
     def send_reboot(self, motors):
         numbers = [0]*12
@@ -202,3 +205,47 @@ class UARTBridge:
                 payload = frame[9:]
 
                 return self.handle_payload(payload)
+
+    def send_positions(self, positions):
+        topic_id = 4
+        floats = []
+        for key in ['FRshoulder', 'FRarm', 'FRfoot', 'FLshoulder', 'FLarm', 'FLfoot',
+                    'BLshoulder', 'BLarm', 'BLfoot', 'BRshoulder', 'BRarm', 'BRfoot']:
+            floats.append(positions[key])
+
+        # Convert each float to bytes and send
+        payload = struct.pack('<12f', *floats)
+
+        length = len(payload)
+
+        frame = []
+        frame.append(ord('>'))
+        frame.append(ord('>'))
+        frame.append(ord('>'))
+
+        frame.append(topic_id)
+
+        frame.append(0x00)
+
+        # Longitud del payload
+        frame.append((length >> 8) & 0xFF)  # len_high
+        frame.append(length & 0xFF)         # len_low
+
+        # Placeholder para el CRC
+        frame.append(0x00)  # CRC high
+        frame.append(0x00)  # CRC low
+
+        # Agregar el payload
+        frame.extend(payload)
+
+        # Calcular el CRC desde topic_id hasta fin de payload
+        data_for_crc = bytes(frame[9:])  # desde index 9 hasta el final
+        crc = self.calculate_crc(data_for_crc)
+
+        frame[7] = (crc >> 8) & 0xFF
+        frame[8] = crc & 0xFF
+
+        # Convertir a bytes para enviar (string en C++, bytes en Python)
+        frame_bytes = bytes(frame)
+        self.ser.write(frame_bytes)
+        print(frame_bytes.hex())
