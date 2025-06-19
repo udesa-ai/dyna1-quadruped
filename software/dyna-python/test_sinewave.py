@@ -19,18 +19,7 @@ input('Press Enter to start sine wave generation...')
 
 # while loop until user interrupts with Ctrl+C
 try:
-    pos = {'FRshoulder':0,
-           'FRarm':0,
-           'FRfoot':0,
-           'FLshoulder':0,
-           'FLarm':0,
-           'FLfoot':0,
-           'BLshoulder':0,
-           'BLarm':0,
-           'BLfoot':0,
-           'BRshoulder':0,
-           'BRarm':0,
-           'BRfoot':0} # uart.read_uart()
+    pos = uart.read_uart()
     center = pos['FRfoot']
     t0 = time.time()
     while True:
