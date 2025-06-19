@@ -49,13 +49,21 @@ class UARTBridge:
                 crc &= 0xFFFF
         return crc
 
-    def send_on_off(self, state, motor = None):
-        state = 1 if state == 'on' else 0
-        if motor == None:
+    def send_on_off(self, state = None, motor = None):
+        if state == None and motor == None:
             for m in self.motors.values():
-                self.send_motor_state(m, state)
+                self.send_motor_state(m, 1)
+                time.sleep(0.1)
+                self.send_motor_state(m, 0)
+                time.sleep(0.1)
         else:
-            self.send_motor_state(self.motors[motor], state)
+            state = 1 if state == 'on' else 0
+            if motor == None:
+                for m in self.motors.values():
+                    self.send_motor_state(m, state)
+                    time.sleep(0.1)
+            else:
+                self.send_motor_state(self.motors[motor], state)
 
     def send_motor_state(self, motor, state):
         # message is now two bytes, first is motor number, second is state (0 or 1)
