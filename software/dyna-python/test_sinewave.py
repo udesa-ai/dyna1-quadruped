@@ -1,14 +1,22 @@
 from classes.uart_bridge import UARTBridge
 import time
 import numpy as np
+import argparse
 
-temp = []
-temp_time = []
+# arpgarse to pass period and amplitude
+parser = argparse.ArgumentParser(description="Sine wave generation for motors")
+parser.add_argument('--period', type=float, default=80, help='Period of the sine wave in seconds')
+parser.add_argument('--amplitude', type=float, default=0.2, help='Amplitude of the sine wave')
+parser.add_argument('--frequency', type=float, default=0.25, help='Frequency of the sine wave in Hz')
+args = parser.parse_args()
 
+# Initialize variables
 uart = UARTBridge()
 uart.open()
 
-T = 80
+T = args.period  # Period of the sine wave
+amplitude = args.amplitude  # Amplitude of the sine wave
+frequency = args.frequency  # Frequency of the sine wave in Hz
 
 input('Press Enter to turn on Front Right motors...')
 uart.send_on_off(state='on', motor='FRshoulder')
@@ -24,11 +32,12 @@ try:
     t0 = time.time()
     while True:
         time.sleep(1/T)
-        setpoint = center + np.sin(2 * np.pi * 0.25 * (time.time() - t0)) * 0.2
+        setpoint = center + np.sin(2 * np.pi * frequency * (time.time() - t0)) * amplitude
         pos['FRfoot'] = setpoint
         uart.send_positions(pos)
 
 except KeyboardInterrupt:
-       print('Exiting...')
+    uart.send_on_off('off')
+    print('Exiting...')
 
 uart.close()
