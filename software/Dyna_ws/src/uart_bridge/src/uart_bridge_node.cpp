@@ -113,6 +113,7 @@ private:
                 }
                 
                 uint8_t topic_id = input_buffer_[start + 3];
+                uint8_t count_uart = input_buffer_[start + 4];
                 uint8_t len_high = input_buffer_[start + 5];
                 uint8_t len_low  = input_buffer_[start + 6];
                 uint16_t payload_len = (len_high << 8) | len_low;
@@ -133,7 +134,10 @@ private:
                     RCLCPP_WARN(this->get_logger(), "CRC mismatch");
                     continue;
                 }
-
+                if ((count_uart - count_hist) != 1){
+                    RCLCPP_INFO(this->get_logger(), "Count %d", count_uart);
+                }
+                count_hist = count_uart;
                 // Extract and publish payload
                 const uint8_t* payload_ptr = reinterpret_cast<const uint8_t*>(&frame[9]);
                 size_t payload_length = frame.size() - 9 - 4;
@@ -456,6 +460,8 @@ private:
     asio::io_context io_context_;
     asio::serial_port serial_port_;
     std::thread io_thread_;
+
+    uint8_t count_hist = 0;
 
     char read_buffer_[1];
     std::queue<std::string> write_queue_;

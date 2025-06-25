@@ -186,7 +186,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     traj = Trajectories(POLYNOMIAL);
 
     timer_ = create_wall_timer(
-        std::chrono::milliseconds(1000/80),
+        std::chrono::milliseconds(10),
         std::bind(&RealInterface::control, this), timer_cb_group_
     );
 
