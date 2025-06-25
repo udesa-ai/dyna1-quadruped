@@ -136,7 +136,7 @@ private:
 
                 // Extract and publish payload
                 const uint8_t* payload_ptr = reinterpret_cast<const uint8_t*>(&frame[9]);
-                size_t payload_length = frame.size() - 9;
+                size_t payload_length = frame.size() - 9 - 4;
                 handle_payload(topic_id, payload_ptr, payload_length);
             }
     
