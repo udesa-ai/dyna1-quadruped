@@ -109,7 +109,7 @@ class UARTBridge:
         frame_bytes = bytes(frame)
         self.ser.write(frame_bytes)
         # print frame bytes for debugging
-        print(frame_bytes.hex())
+        # print(frame_bytes.hex())
 
     def send_reboot(self, motors):
         numbers = [0]*12
@@ -159,6 +159,9 @@ class UARTBridge:
         self.ser.write(frame_bytes)
 
     def handle_payload(self, payload):
+        if len(payload) != 168:
+            print(len(payload))
+            return None
         floats = struct.unpack('<42f', payload)  # 42 floats, little-endian
 
         imu = {
@@ -194,6 +197,8 @@ class UARTBridge:
 
                 topic_id = buffer[sync_index + 3]
                 length = (buffer[sync_index + 5] << 8) | buffer[sync_index + 6]
+                print(f'Length is {length}')
+                print(f'Buffer: {buffer[sync_index:].hex()}')
                 frame_len = 3 + 1 + 1 + 2 + 2 + length
 
                 if len(buffer) < sync_index + frame_len:
@@ -202,7 +207,7 @@ class UARTBridge:
                 frame = buffer[sync_index:sync_index + frame_len]
                 del buffer[:sync_index + frame_len]
 
-                payload = frame[9:]
+                payload = frame[9:-4]
 
                 return self.handle_payload(payload)
 
@@ -248,4 +253,4 @@ class UARTBridge:
         # Convertir a bytes para enviar (string en C++, bytes en Python)
         frame_bytes = bytes(frame)
         self.ser.write(frame_bytes)
-        print(frame_bytes.hex())
+        #print(frame_bytes.hex())

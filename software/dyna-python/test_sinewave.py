@@ -28,12 +28,17 @@ input('Press Enter to start sine wave generation...')
 # while loop until user interrupts with Ctrl+C
 try:
     pos = uart.read_uart()
-    center = pos['FRfoot']
+    center0 = pos['FRshoulder']['pos']
+    center1 = pos['FRarm']['pos']
+    center2 = pos['FRfoot']['pos']
+    pos = {'FRshoulder':center0, 'FRarm':center1, 'FRfoot':center2, 'FLshoulder':0, 'FLarm':0, 'FLfoot':0, 'BLshoulder':0, 'BLarm':0, 'BLfoot':0, 'BRshoulder':0, 'BRarm':0, 'BRfoot':0 }
     t0 = time.time()
     while True:
         time.sleep(1/T)
-        setpoint = center + np.sin(2 * np.pi * frequency * (time.time() - t0)) * amplitude
-        pos['FRfoot'] = setpoint
+        setpoint = np.sin(2 * np.pi * frequency * (time.time() - t0)) * amplitude
+        pos['FRshoulder'] = setpoint + center0
+        pos['FRarm'] = setpoint + center1
+        pos['FRfoot'] = setpoint + center2
         uart.send_positions(pos)
 
 except KeyboardInterrupt:
