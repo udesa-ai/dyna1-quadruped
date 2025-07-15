@@ -1,4 +1,4 @@
-## 🦾 Configuración del entorno para Dyna1 en Isaac Sim
+## Configuración del entorno para Dyna1 en Isaac Sim
 
 ### Isaac Lab
 **Isaac Lab** es una librería construida sobre Isaac Sim que facilita el desarrollo de entornos de simulación para 
