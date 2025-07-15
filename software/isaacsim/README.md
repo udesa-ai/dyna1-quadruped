@@ -120,7 +120,7 @@ Este comando indica que se va a lanzar la simulacion con terrenos **flat**, de m
 		usage: train.py [--help] [--hydra-help] [--version] [--cfg {job,hydra,all}] [--resolve] [--package PACKAGE] [--run] [--multirun] [--shell-completion] [--config-path CONFIG_PATH] [--config-name CONFIG_NAME] [--config-dir CONFIG_DIR] [--experimental-rerun EXPERIMENTAL_RERUN] [--info [{all,config,defaults,defaults-tree,plugins,searchpath}]] [overrides ...]
 		train.py: error: unrecognized arguments: --/app/livestream/allowResize=false
 
-- Por lo que debuggee esta linea:
+- Por lo que debuggee esta linea en **train.py**:
 
 		app_launcher = AppLauncher(args_cli)
  
