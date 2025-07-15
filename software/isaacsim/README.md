@@ -115,24 +115,26 @@ Este comando indica que se va a lanzar la simulacion con terrenos **flat**, de m
 
 
 
-En uno de sus commits los genios de IsaacLab modificaron y tiro este error:
+- En uno de sus commits los genios de IsaacLab modificaron y tiro este error:
 
-	usage: train.py [--help] [--hydra-help] [--version] [--cfg {job,hydra,all}] [--resolve] [--package PACKAGE] [--run] [--multirun] [--shell-completion] [--config-path CONFIG_PATH] [--config-name CONFIG_NAME] [--config-dir CONFIG_DIR] [--experimental-rerun EXPERIMENTAL_RERUN] [--info [{all,config,defaults,defaults-tree,plugins,searchpath}]] [overrides ...]
-	train.py: error: unrecognized arguments: --/app/livestream/allowResize=false
+		usage: train.py [--help] [--hydra-help] [--version] [--cfg {job,hydra,all}] [--resolve] [--package PACKAGE] [--run] [--multirun] [--shell-completion] [--config-path CONFIG_PATH] [--config-name CONFIG_NAME] [--config-dir CONFIG_DIR] [--experimental-rerun EXPERIMENTAL_RERUN] [--info [{all,config,defaults,defaults-tree,plugins,searchpath}]] [overrides ...]
+		train.py: error: unrecognized arguments: --/app/livestream/allowResize=false
 
-Por lo que debuggee esta linea:
+- Por lo que debuggee esta linea:
 
-	app_launcher = AppLauncher(args_cli)
+		app_launcher = AppLauncher(args_cli)
  
- inyecta el argumento --/app/livestream/allowResize=false dentro de sys.argv. Agregar este filtrado después de la línea en la que se crea AppLauncher resuelve el problema.
+ inyecta el argumento --/app/livestream/allowResize=false dentro de sys.argv. 
+ 
+ - Agregar este filtrado después de la línea en la que se crea AppLauncher resuelve el problema.
 
-	...
-	app_launcher = AppLauncher(args_cli)
-	simulation_app = app_launcher.app
-	
-	# Filter out AppLauncher-injected args before Hydra sees them
-	sys.argv = [sys.argv[0]] + [arg for arg in hydra_args if not arg.startswith("--/")]
-	...
+		...
+		app_launcher = AppLauncher(args_cli)
+		simulation_app = app_launcher.app
+		
+		# Filter out AppLauncher-injected args before Hydra sees them
+		sys.argv = [sys.argv[0]] + [arg for arg in hydra_args if not arg.startswith("--/")]
+		...
      
 
 
