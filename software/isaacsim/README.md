@@ -115,7 +115,7 @@ Este comando indica que se va a lanzar la simulacion con terrenos **flat**, de m
 
 
 
-- En uno de sus commits los genios de IsaacLab modificaron y tiro este error:
+- En uno de sus commits los genios de IsaacLab modificaron como hydra parsea atributos y tiro este error:
 
 		usage: train.py [--help] [--hydra-help] [--version] [--cfg {job,hydra,all}] [--resolve] [--package PACKAGE] [--run] [--multirun] [--shell-completion] [--config-path CONFIG_PATH] [--config-name CONFIG_NAME] [--config-dir CONFIG_DIR] [--experimental-rerun EXPERIMENTAL_RERUN] [--info [{all,config,defaults,defaults-tree,plugins,searchpath}]] [overrides ...]
 		train.py: error: unrecognized arguments: --/app/livestream/allowResize=false
