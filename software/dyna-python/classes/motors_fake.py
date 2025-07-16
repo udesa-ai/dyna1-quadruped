@@ -42,6 +42,9 @@ class Motors:
             self.brushless[motor].set_encoder_measurement(motors[motor])
             # print(f'{motor} set to {motors[motor]}')
 
+    def set_zero_positions(self, motors):
+        for motor, pos0 in motors.items():
+            self.brushless[motor].set_pos0(pos0)
 
     def get_motor_positions(self, motors):
         for motor in motors:
