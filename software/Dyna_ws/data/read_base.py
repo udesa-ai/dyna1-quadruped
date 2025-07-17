@@ -7,7 +7,7 @@ import statistics
 
 all_in_one = False
 walking = False
-get_this = ["frfoot"]
+get_this = ["brfoot"]
 
 max_current = 50
 
@@ -332,20 +332,20 @@ plt.xlabel('Time [S]')
 plt.ylabel('Power [W]')
 plt.grid()
 
-############# POTENCIA TOTAL ##############
+############# IMU ##############
 
 #time_start,av_x,av_y,av_z,la_x,la_y,la_z
 
 plt.figure()
-plt.plot(imu['time_start'], imu['la_x'], label = 'linear acceleration x')
-plt.plot(imu['time_start'], imu['la_y'], label = 'linear acceleration y')
-plt.plot(imu['time_start'], imu['la_z'], label = 'linear acceleration z')
+plt.plot(imu['la_x'], label = 'linear acceleration x')
+plt.plot(imu['la_y'], label = 'linear acceleration y')
+plt.plot(imu['la_z'], label = 'linear acceleration z')
 plt.legend()
 
 plt.figure()
-plt.plot(imu['time_start'], imu['av_x'], label = 'angular velocity x')
-plt.plot(imu['time_start'], imu['av_y'], label = 'angular velocity y')
-plt.plot(imu['time_start'], imu['av_z'], label = 'angular velocity z')
+plt.plot(imu['av_x'], label = 'angular velocity x')
+plt.plot(imu['av_y'], label = 'angular velocity y')
+plt.plot(imu['av_z'], label = 'angular velocity z')
 plt.legend()
 
 ############# SHOW ##############
