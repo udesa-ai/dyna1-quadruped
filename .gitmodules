@@ -1,0 +1,3 @@
+[submodule "software/mocapros2_ws/src/mocap4ros2_optitrack"]
+	path = software/mocapros2_ws/src/mocap4ros2_optitrack
+	url = https://github.com/MOCAP4ROS2-Project/mocap4ros2_optitrack.git
