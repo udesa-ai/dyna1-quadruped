@@ -540,7 +540,9 @@ void RealInterface::move(){
     float YawRate = 0.0f;
 
     /* If not stopped */
-    if (mini_cmd.motion != "Stop" and (mini_cmd.x_velocity > 0.05f or mini_cmd.y_velocity > 0.05f or mini_cmd.rate > 0.05f or mini_cmd.roll > 0.05f or mini_cmd.pitch > 0.05f or mini_cmd.yaw > 0.05f or mini_cmd.z > 0.05f))
+    // using absolute values to avoid problems with small values
+    if (mini_cmd.motion != "Stop" and (std::fabs(mini_cmd.x_velocity) > 0.01f and std::fabs(mini_cmd.y_velocity) > 0.01f and std::fabs(mini_cmd.rate) > 0.01f   
+        and std::fabs(mini_cmd.roll) > 0.01f and std::fabs(mini_cmd.pitch) > 0.01f and std::fabs(mini_cmd.yaw) > 0.01f and std::fabs(mini_cmd.z) > 0.01f))
     {
         StepVelocity = BaseStepVelocity;
         SwingPeriod = std::max(
