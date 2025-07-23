@@ -18,7 +18,7 @@
     # Stance Width
     foot_y: 0.297
     # Stance Height
-    height: 0.32 # 0.20
+    height: 0.268 # 0.20
     # Adjust for balanced walk
     com_offset: -0.05
   
