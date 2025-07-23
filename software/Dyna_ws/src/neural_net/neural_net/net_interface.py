@@ -60,7 +60,8 @@ class NeuralNet(Node):
         # Publisher joint request
         self.pub_joint_angles = self.create_publisher(Joints, 'joint_requests', 1)
 
-        print('Ready to receive neural input')
+        # ROS info print
+        self.get_logger().info('Neural Net controller initialized')
 
 
     def change_order(self, values, forwards = True):
@@ -130,10 +131,12 @@ class NeuralNet(Node):
         offsets = [0.0, -0.79, 1.5]
         for index, action in enumerate(temp_actions):
             self.real_actions.append(0.25*action + offsets[index%3])
-        self.publishall([self.real_actions[0:3], self.real_actions[3:6], self.real_actions[6:9], self.real_actions[9:12]], max_check = False)
+        # print joint agles with logger
+        self.get_logger().info(f'Joint Angles: {self.real_actions}')
+        self.publishall([self.real_actions[0:3], self.real_actions[3:6], self.real_actions[6:9], self.real_actions[9:12]])
 
 
-    def publishall(self, joint_angles, max_check = False):
+    def publishall(self, joint_angles):
         angles = [np.degrees(joint_angles[0][0]), np.degrees(joint_angles[0][1]), np.degrees(joint_angles[0][2]),
                   np.degrees(joint_angles[1][0]), np.degrees(joint_angles[1][1]), np.degrees(joint_angles[1][2]),
                   np.degrees(joint_angles[2][0]), np.degrees(joint_angles[2][1]), np.degrees(joint_angles[2][2]),
