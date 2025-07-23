@@ -6,10 +6,11 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os
 from ament_index_python.packages import get_package_share_directory
+from launch.event_handlers import OnProcessStart
 
 def generate_launch_description():
     MAX_CURRENT = LaunchConfiguration('MAX_CURRENT')
-    MAX_CURRENT_launch_arg = launch.actions.DeclareLaunchArgument(
+    MAX_CURRENT_launch_arg = DeclareLaunchArgument(
         'MAX_CURRENT',
         default_value='30'
     )
@@ -52,7 +53,7 @@ def generate_launch_description():
     
     # Register event handler to launch these only after uart_bridge has started
     launch_rest = RegisterEventHandler(
-        event_handler=launch.event_handlers.OnProcessStart(
+        event_handler=OnProcessStart(
             target_action=uart_bridge,
             on_start=[
                 motores,
