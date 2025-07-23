@@ -13,6 +13,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "error_msgs/msg/error.hpp"
+#include "geometry_msgs/msg/twist.hpp"  
 #include <chrono>
 #include "trajectories.hpp"
 #include <algorithm>
@@ -22,6 +23,7 @@ class RealInterface : public rclcpp::Node {
 public:
     RealInterface();
     void imu_cb(const sensor_msgs::msg::Imu::SharedPtr data);
+    void vel_cb(const geometry_msgs::msg::Twist::SharedPtr data);
     void update_data(joint_msgs::msg::OdriveData::SharedPtr data);
     void cmd_cb(joint_msgs::msg::MiniCmd::SharedPtr data);
     void jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data);
@@ -92,7 +94,7 @@ private:
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr ja_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr motor_state;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publish_max_currents;
-    rclcpp::Publisher<joint_msgs::msg::NeurlaInput>::SharedPtr publish_with_net;
+    rclcpp::Publisher<joint_msgs::msg::NeuralInput>::SharedPtr publish_with_net;
     Trajectories traj;
     rclcpp::TimerBase::SharedPtr timer_;
     MatrixJoint adder;
@@ -102,6 +104,7 @@ private:
     float base_lin_vel[3] = { 0.0, 0.0, 0.0};
     float base_ang_vel[3] = { 0.0, 0.0, 0.0};
     float projected_gravity[3] = { 0.0, 0.0, 0.0};
+    float joint_offsets[3] = {0.0f, -0.79f, 1.5f};
 };
 
 

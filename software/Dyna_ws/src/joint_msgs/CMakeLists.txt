@@ -34,7 +34,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OdriveData.msg"
   "msg/Estimates.msg"
   "msg/JointEstimates.msg"
-  "msg/NeurlaInput.msg"
+  "msg/NeuralInput.msg"
   DEPENDENCIES builtin_interfaces  geometry_msgs std_msgs
 )
 

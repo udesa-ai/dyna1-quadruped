@@ -243,7 +243,7 @@ void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
 
 void RealInterface::vel_cb(const geometry_msgs::msg::Twist::SharedPtr data)
 {
-    float delta = 0.2
+    float delta = 0.2;
     base_lin_vel[0] = delta * data->linear.x + (1-delta)*base_lin_vel[0];
     base_lin_vel[1] = delta * data->linear.y + (1-delta)*base_lin_vel[1];
     base_lin_vel[2] = delta * data->linear.z + (1-delta)*base_lin_vel[2];
@@ -477,7 +477,7 @@ MatrixJoint RealInterface::get_xyz()
 }
 
 
-void Realinterface::move_nn(){
+void RealInterface::move_nn(){
     float input_joints[12];
     float input_vels[12];
 
