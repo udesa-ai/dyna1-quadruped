@@ -541,7 +541,7 @@ void RealInterface::move(){
 
     /* If not stopped */
     // using absolute values to avoid problems with small values
-    if (mini_cmd.motion != "Stop" and (std::fabs(mini_cmd.x_velocity) > 0.01f or std::fabs(mini_cmd.y_velocity) > 0.01f or std::fabs(mini_cmd.rate) > 0.01f   
+    if (mini_cmd.motion != "Stop" or (std::fabs(mini_cmd.x_velocity) > 0.01f or std::fabs(mini_cmd.y_velocity) > 0.01f or std::fabs(mini_cmd.rate) > 0.01f   
         or std::fabs(mini_cmd.roll) > 0.01f or std::fabs(mini_cmd.pitch) > 0.01f or std::fabs(mini_cmd.yaw) > 0.01f or std::fabs(mini_cmd.z) > 0.01f))
     {
         StepVelocity = BaseStepVelocity;
