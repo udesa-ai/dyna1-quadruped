@@ -540,38 +540,25 @@ void RealInterface::move(){
     float YawRate = 0.0f;
 
     /* If not stopped */
-    if (mini_cmd.motion != "Stop")
-    {
-        StepVelocity = BaseStepVelocity;
-        SwingPeriod = std::max(
-                        std::min(BaseSwingPeriod + (-mini_cmd.faster - mini_cmd.slower) * SV_SCALE,
-                                SwingPeriod_LIMITS[1]),
-                                SwingPeriod_LIMITS[0]);
-        
-        /* If stepping calculate step length, side length and yaw to then generate movement */
-        if (mini_cmd.movement == "Stepping") {
-            StepLength = mini_cmd.x_velocity + std::fabs(mini_cmd.y_velocity * 0.66f);
-            StepLength = std::max( std::min(StepLength,1.0f), -1.0f);
-            StepLength *= STEPLENGTH_SCALE;
-            LateralFraction = mini_cmd.y_velocity * M_PI / 2;
-            YawRate = mini_cmd.rate * YAW_SCALE;
-            pos << 0.0f, 0.0f, 0.0f;
-            orn << 0.0f, 0.0f, 0.0f;
-        
-        /* If Viewing set steps to 0 and only change orientation and position */
-        } else {
-            StepLength = 0.0f;
-            LateralFraction = 0.0f;
-            YawRate = 0.0f;
-
-            ClearanceHeight = BaseClearanceHeight;
-            PenetrationDepth = BasePenetrationDepth;
-            StepVelocity = BaseStepVelocity;
-
-            pos << 0.0f, 0.0f, mini_cmd.z * Z_SCALE_CTRL;
-            orn << mini_cmd.roll * RPY_SCALE, mini_cmd.pitch * RPY_SCALE, mini_cmd.yaw * RPY_SCALE;
-        }
-    /* If stopped */
+    // if (mini_cmd.motion != "Stop")
+    // {
+    StepVelocity = BaseStepVelocity;
+    SwingPeriod = std::max(
+                    std::min(BaseSwingPeriod + (-mini_cmd.faster - mini_cmd.slower) * SV_SCALE,
+                            SwingPeriod_LIMITS[1]),
+                            SwingPeriod_LIMITS[0]);
+    
+    /* If stepping calculate step length, side length and yaw to then generate movement */
+    if (mini_cmd.movement == "Stepping") {
+        StepLength = mini_cmd.x_velocity + std::fabs(mini_cmd.y_velocity * 0.66f);
+        StepLength = std::max( std::min(StepLength,1.0f), -1.0f);
+        StepLength *= STEPLENGTH_SCALE;
+        LateralFraction = mini_cmd.y_velocity * M_PI / 2;
+        YawRate = mini_cmd.rate * YAW_SCALE;
+        pos << 0.0f, 0.0f, 0.0f;
+        orn << 0.0f, 0.0f, 0.0f;
+    
+    /* If Viewing set steps to 0 and only change orientation and position */
     } else {
         StepLength = 0.0f;
         LateralFraction = 0.0f;
@@ -580,10 +567,23 @@ void RealInterface::move(){
         ClearanceHeight = BaseClearanceHeight;
         PenetrationDepth = BasePenetrationDepth;
         StepVelocity = BaseStepVelocity;
-        SwingPeriod = BaseSwingPeriod;
-        pos << 0.0f, 0.0f, 0.0f;
-        orn << 0.0f, 0.0f, 0.0f;
+
+        pos << 0.0f, 0.0f, mini_cmd.z * Z_SCALE_CTRL;
+        orn << mini_cmd.roll * RPY_SCALE, mini_cmd.pitch * RPY_SCALE, mini_cmd.yaw * RPY_SCALE;
     }
+    // /* If stopped */
+    // } else {
+    //     StepLength = 0.0f;
+    //     LateralFraction = 0.0f;
+    //     YawRate = 0.0f;
+
+    //     ClearanceHeight = BaseClearanceHeight;
+    //     PenetrationDepth = BasePenetrationDepth;
+    //     StepVelocity = BaseStepVelocity;
+    //     SwingPeriod = BaseSwingPeriod;
+    //     pos << 0.0f, 0.0f, 0.0f;
+    //     orn << 0.0f, 0.0f, 0.0f;
+    // }
     
     ClearanceHeight += jb.updown * CHPD_SCALE;
     PenetrationDepth += jb.leftright * CHPD_SCALE;
