@@ -30,7 +30,7 @@ public:
             const int angular, const double l_scale, const double a_scale,
             const int LB, const int RB, const int B_scale, const int LT,
             const int RT, const int UD, const int LR,
-            const int sw, const int es, const int start);
+            const int sw, const int es, const int start, const int nn);
 
     // \brief Takes a Joy messages and converts it to linear and angular velocity (Twist)
     // \param joy: sensor_msgs describing Joystick inputs
@@ -62,6 +62,7 @@ private:
     // BUTTONS ON JOYSTICK
     int sw_ = 0;
     int es_ = 0;
+    int nn_ = 0;
     int RT_ = 0;
     int LT_ = 0;
     int UD_ = 0;
@@ -74,6 +75,7 @@ private:
     // TRIGGERS
     bool switch_trigger = false;
     bool ESTOP = false;
+    bool neural_net_trigger = false;
     int updown = 0;
     int leftright = 0;
     bool left_bump = false;

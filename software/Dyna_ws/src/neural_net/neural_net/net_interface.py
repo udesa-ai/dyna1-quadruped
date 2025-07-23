@@ -48,7 +48,7 @@ class NeuralNet(Node):
         ########### Pub & Sub ###########
         #################################
 
-        # Subscription a imu filtrada del bno055
+        # Subscription todos los input de la red
         self.neural_sub = self.create_subscription(
             NeuralInput,
             'network_input',

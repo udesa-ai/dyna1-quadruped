@@ -4,7 +4,7 @@ Teleop::Teleop(const int linear_x, const int linear_y, const int linear_z,
 	               const int angular, const double l_scale, const double a_scale,
 	               const int LB, const int RB, const int B_scale, const int LT,
 	               const int RT, const int UD, const int LR,
-	               const int sw, const int es, const int start)
+	               const int sw, const int es, const int start, const int nn)
 {
     // step length or pitch
     linear_x_ = linear_x;
@@ -31,6 +31,9 @@ Teleop::Teleop(const int linear_x, const int linear_y, const int linear_z,
     sw_ = sw;
     // E-STOP
     es_ = es;
+
+    // Start Neural Net
+    nn_ = nn;
 
     // Arrow PAd
     UD_ = UD;
@@ -67,6 +70,9 @@ void Teleop::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy)
     // ESTOP: Button B
     ESTOP = joy->buttons[es_];
 
+    // Neural Net: Button ?
+    neural_net_trigger = joy->buttons[nn_];
+
     // Arrow Pad
     updown = joy->axes[UD_];
     leftright = -joy->axes[LR_];
@@ -101,6 +107,7 @@ teleop_msgs::msg::JoyButtons Teleop::return_buttons()
     jb.left_bump = left_bump;
     jb.right_bump = right_bump;
     jb.start_b = start_button;
+    jb.nn_start_b = neural_net_trigger;
 
     return jb;
 }

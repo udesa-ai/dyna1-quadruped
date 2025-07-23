@@ -24,6 +24,7 @@ class TeleopNode : public rclcpp::Node
             int angular = 0;
             int sw = 0;
             int es = 1;
+            int nn = 2;
             int RB = 5;
             int LB = 2;
             int RT = 5;
@@ -46,6 +47,7 @@ class TeleopNode : public rclcpp::Node
             this->declare_parameter("scale_bumper", B_scale);
             this->declare_parameter("button_switch", sw);
             this->declare_parameter("button_estop", es);
+            this->declare_parameter("nn_button", nn);
             this->declare_parameter("rb", RB);
             this->declare_parameter("lb", LB);
             this->declare_parameter("rt", RT);
@@ -66,6 +68,7 @@ class TeleopNode : public rclcpp::Node
             debounce_thresh = this->get_parameter("debounce_thresh").as_double();
             sw = this->get_parameter("button_switch").as_int();
             es = this->get_parameter("button_estop").as_int();
+            nn = this->get_parameter("nn_button").as_int();
             RB = this->get_parameter("rb").as_int();
             LB = this->get_parameter("lb").as_int();
             RT = this->get_parameter("rt").as_int();
@@ -76,7 +79,7 @@ class TeleopNode : public rclcpp::Node
             
             teleop = new Teleop(linear_x, linear_y, linear_z, angular,
                                    l_scale, a_scale, LB, RB, B_scale, LT,
-                                   RT, UD, LR, sw, es, start);
+                                   RT, UD, LR, sw, es, start, nn);
 
             switched = true;
             switch_movement_pub = this->create_publisher<std_msgs::msg::Bool>("switch_movement_rec", 1);

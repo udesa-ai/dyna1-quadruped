@@ -7,8 +7,9 @@
 #include "joint_msgs/msg/mini_cmd.hpp"
 #include "joint_msgs/msg/joints.hpp"
 #include "joint_msgs/msg/odrive_data.hpp"
+#include "joint_msgs/msg/neural_input.hpp"
 #include "teleop_msgs/msg/joy_buttons.hpp"
-#include "custom_sensor_msgs/msg/im_udata.hpp"
+#include <sensor_msgs/msg/imu.hpp>
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "error_msgs/msg/error.hpp"
@@ -20,7 +21,7 @@
 class RealInterface : public rclcpp::Node {
 public:
     RealInterface();
-    void imu_cb(const custom_sensor_msgs::msg::IMUdata::SharedPtr data);
+    void imu_cb(const sensor_msgs::msg::Imu::SharedPtr data);
     void update_data(joint_msgs::msg::OdriveData::SharedPtr data);
     void cmd_cb(joint_msgs::msg::MiniCmd::SharedPtr data);
     void jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data);
@@ -28,6 +29,7 @@ public:
     void control();
     MatrixJoint get_xyz();
     void move();
+    void move_nn();
     void publishall(MatrixJoint angles);
     void error_update(error_msgs::msg::Error::SharedPtr data);
 
@@ -59,7 +61,7 @@ private:
     bool current_set;
     joint_msgs::msg::MiniCmd mini_cmd;
     teleop_msgs::msg::JoyButtons jb;
-    std::vector<float> imu = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    std::vector<float> imu = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     rclcpp::Time time_now;
     rclcpp::Time upt0;
     QuadModel quadKine;
@@ -74,6 +76,7 @@ private:
     rclcpp::Subscription<joint_msgs::msg::MiniCmd>::SharedPtr sub_cmd;
     rclcpp::Subscription<teleop_msgs::msg::JoyButtons>::SharedPtr sub_jb;
     bool jbreleased;
+    bool nnreleased;
     bool sbreleased;
     bool start_movement;
     bool standing;
@@ -81,18 +84,24 @@ private:
     uint8_t uptime;
     bool stood;
     bool descend;
+    bool nn_state;
     rclcpp::Subscription<joint_msgs::msg::OdriveData>::SharedPtr subscription_joint_data;
     rclcpp::Subscription<error_msgs::msg::Error>::SharedPtr errors_data;
-    rclcpp::Subscription<custom_sensor_msgs::msg::IMUdata>::SharedPtr sub_imu;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_velocity;
     rclcpp::Publisher<joint_msgs::msg::Joints>::SharedPtr ja_pub;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr motor_state;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publish_max_currents;
+    rclcpp::Publisher<joint_msgs::msg::NeurlaInput>::SharedPtr publish_with_net;
     Trajectories traj;
     rclcpp::TimerBase::SharedPtr timer_;
     MatrixJoint adder;
     rclcpp::CallbackGroup::SharedPtr client_cb_group_;
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
     float com_offset;
+    float base_lin_vel[3] = { 0.0, 0.0, 0.0};
+    float base_ang_vel[3] = { 0.0, 0.0, 0.0};
+    float projected_gravity[3] = { 0.0, 0.0, 0.0};
 };
 
 

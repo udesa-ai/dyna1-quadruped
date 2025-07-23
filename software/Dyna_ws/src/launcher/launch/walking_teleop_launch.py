@@ -1,14 +1,11 @@
-from launch import LaunchDescription, LaunchContext
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription
-import launch.actions
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os
 from ament_index_python.packages import get_package_share_directory
-from pathlib import Path
-from launch.substitutions import LaunchConfiguration
-from launch.actions import RegisterEventHandler
-from launch.events.process import ProcessStarted
 
 def generate_launch_description():
     MAX_CURRENT = LaunchConfiguration('MAX_CURRENT')
@@ -29,30 +26,11 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
 
-    # inter = Node(
-    #         package='can_interface',
-    #         namespace='',
-    #         executable='interface',
-    #         name='CAN_Interfacec',
-    #         parameters=[{'use_sim_time': use_sim_time}],
-    #         output="screen")
-
     motores = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory('motor_can'),'launch'),'/motor_launch.py']
         )
     )
-
-    # can_bridge = Node(
-    #         package='ros2socketcan_bridge',
-    #         namespace='',
-    #         executable='ros2can_bridge',
-    #         name='CANbridge',
-    #         parameters=[{'use_sim_time': use_sim_time}],
-    #         output="screen")
-
-    
- 
 
     control = IncludeLaunchDescription(
     	PythonLaunchDescriptionSource(
@@ -64,21 +42,6 @@ def generate_launch_description():
         launch_arguments={'MAX_CURRENT':MAX_CURRENT}.items()
     )
 
-    # imu = IncludeLaunchDescription(
-    # 	PythonLaunchDescriptionSource(
-    #         [
-    #             os.path.join(get_package_share_directory('bno055'), 'launch'),
-    #          			  '/bno055.launch.py'
-    #         ]
-    #     )
-    # )
-
-    # trace = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [os.path.join(get_package_share_directory('tracetools_launch'),'launch'),'/example.launch.py']
-    #     )
-    # )
-
     safety = Node(
             package='safety',
             namespace='',
@@ -87,9 +50,20 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
     
+    # Register event handler to launch these only after uart_bridge has started
+    launch_rest = RegisterEventHandler(
+        event_handler=launch.event_handlers.OnProcessStart(
+            target_action=uart_bridge,
+            on_start=[
+                motores,
+                control,
+                safety
+            ]
+        )
+    )
+
     return LaunchDescription([
         MAX_CURRENT_launch_arg,
         uart_bridge,
-        motores,
-        control,
-        safety])
+        launch_rest
+    ])

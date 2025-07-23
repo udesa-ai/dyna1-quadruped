@@ -26,6 +26,7 @@ def generate_launch_description():
                  "scale_angular":1.0,
                  "button_switch":0,
                  "button_estop":1,
+                 "nn_button":2,
                  "start_button":7}
             ])
   

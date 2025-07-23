@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(joint_msgs REQUIRED)
 find_package(teleop_msgs REQUIRED)
-find_package(custom_sensor_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(error_msgs REQUIRED)
 
@@ -28,7 +28,7 @@ endif()
 
 
 add_executable(interface src/dyna_real_interface.cpp src/algebra.cpp src/bezier.cpp src/leg_kinematics.cpp src/quad_kinematics.cpp src/trajectories.cpp)
-ament_target_dependencies(interface rclcpp joint_msgs teleop_msgs std_msgs custom_sensor_msgs error_msgs)
+ament_target_dependencies(interface rclcpp joint_msgs teleop_msgs std_msgs sensor_msgs error_msgs)
 
 install(TARGETS
   interface

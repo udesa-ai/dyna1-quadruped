@@ -5,7 +5,12 @@ using std::placeholders::_1;
 RealInterface::RealInterface(): Node("dyna_real_interface")
 {
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Staring Interface Node");
-    /* ############## Parameters ############## */
+
+    /* ################################################################################## */
+    /* ################################    PARAMETERS    ################################ */
+    /* ################################################################################## */
+
+    /* Max current parameter to be sent to odrives as a max limit */
     this->declare_parameter("MAX_CURRENT",10);
     MAX_CURRENT = (uint8_t) this->get_parameter("MAX_CURRENT").as_int();
     
@@ -45,8 +50,6 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     SwingPeriod_LIMITS[0] = (float) test[0];
     SwingPeriod_LIMITS[1] = (float) test[1];
 
-    
-
     /* Stock, use arrow pads to change */
     this->declare_parameter("BaseClearanceHeight",0.0f);
     BaseClearanceHeight = (float) this->get_parameter("BaseClearanceHeight").as_double();
@@ -66,18 +69,25 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     PenetrationDepth_LIMITS[0] = (float)param3.as_double_array()[0];
     PenetrationDepth_LIMITS[1] = (float)param3.as_double_array()[1];
 
-    /* ############## CONTROL VARIABLEs ############## */
-    /* joint angles in dictionary */
+    /* ################################################################################# */
+    /* ############################    CONTROL VARIABLES    ############################ */
+    /* ################################################################################# */
+
+    /* joint angles in vector */
     joint_angles << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-    
-    /* joint currents in dictionary */
+
+    /* joint velocities in vector */
+    joint_velocities_rpm << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+    /* joint currents in vector */
     joint_currents << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 
-    /* Flag to signal when angles and currents have already been measured atleast once */
+    /* Flag to signal when angles and currents have already been measured at least once */
     readflag_data = false;
     config_done = false;
     current_set = false;
 
+    /* Initialize received command to then transform into motor commands */
     mini_cmd.x_velocity = 0.0f;
     mini_cmd.y_velocity = 0.0f;
     mini_cmd.rate = 0.0f;
@@ -88,8 +98,8 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     mini_cmd.motion = "Stop";
     mini_cmd.movement = "Stepping";
 
-    /* IMU: R, P, Ax, Ay, Az, Gx, Gy, Gz */
-    for (int i = 0; i < 8; i++) {
+    /* IMU: Ax, Ay, Az, Gx, Gy, Gz */
+    for (int i = 0; i < 6; i++) {
         imu[i] = 0.0f;
     }
 
@@ -143,13 +153,11 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     // std::array<float, 4> dSref = {0.0f, 0.5f, 0.5f, 0.0f};
     bzg = BezierGait(dSref, dSref_end, (float) this->get_parameter("dt").as_double(), BaseSwingPeriod, STEPLENGTH_SCALE);
 
+    traj = Trajectories(POLYNOMIAL);
     
-    /* ############## SUBSCRIBERS ############## */
-
-    client_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    timer_cb_group_ = client_cb_group_;
-    rclcpp::SubscriptionOptions options;
-    options.callback_group = client_cb_group_;
+    /* ################################################################################# */
+    /* ###############################    SUBSCRIBERS    ############################### */
+    /* ################################################################################# */
 
     sub_cmd = this->create_subscription<joint_msgs::msg::MiniCmd>("mini_cmd",1,
     std::bind(&RealInterface::cmd_cb, this, _1));
@@ -157,8 +165,8 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     sub_jb = this->create_subscription<teleop_msgs::msg::JoyButtons>("joybuttons",1,
     std::bind(&RealInterface::jb_cb, this, _1));
 
-
     jbreleased = true;
+    nnreleased = true;
     sbreleased = true;
     start_movement = false;
     standing = true;
@@ -166,25 +174,41 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     uptime = 3;
     stood = false;
     descend = false;
+    nn_state = false;
 
     /* Subscription in charge of receiving new data */
     subscription_joint_data = this->create_subscription<joint_msgs::msg::OdriveData>("joint_data",
     10,std::bind(&RealInterface::update_data, this, _1));
 
+    /* Subscription in charge of receiving error state */
     errors_data = this->create_subscription<error_msgs::msg::Error>("error_state",
     10,std::bind(&RealInterface::error_update, this, _1));
 
-    sub_imu = this->create_subscription<custom_sensor_msgs::msg::IMUdata>("IMU",
+    /* Subscription in charge of receiving raw IMU data from custom board */
+    sub_imu = this->create_subscription<sensor_msgs::msg::Imu>("imu",
     10,std::bind(&RealInterface::imu_cb, this, _1));
 
-    /* ############## PUBLISHERS ############## */
+    sub_velocity = this->create_subscription<geometry_msgs::msg::Twist>("rigid_body_velocity",
+    10,std::bind(&RealInterface::vel_cb, this, _1));
+
+
+    /* ################################################################################ */
+    /* ###############################    PUBLISHERS    ############################### */
+    /* ################################################################################ */
+
+    /* publish joint angles to be set */
     ja_pub = this->create_publisher<joint_msgs::msg::Joints>("joint_requests",1);
+
+    /* publish motor state (on or off) */
     motor_state = this->create_publisher<std_msgs::msg::Bool>("motors_state",1);
 
+    /* Request a change in motor max current limit */
     publish_max_currents = this->create_publisher<std_msgs::msg::Float32>("request_maxc",10);
 
-    traj = Trajectories(POLYNOMIAL);
+    publish_with_net = this->create_publisher<joint_msgs::msg::NeuralInput>("network_input",1);
 
+    /* Timer for when to send request of motor angle */
+    timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     timer_ = create_wall_timer(
         std::chrono::milliseconds(10),
         std::bind(&RealInterface::control, this), timer_cb_group_
@@ -193,17 +217,38 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"READY TO GO!");
 }
 
-void RealInterface::imu_cb(const custom_sensor_msgs::msg::IMUdata::SharedPtr data)
+void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
 {
-    imu[0] = data->roll;
-    imu[1] = data->pitch;
-    imu[2] = (data->gyro_x) * (M_PI / 180);
-    imu[3] = (data->gyro_y) * (M_PI / 180);
-    imu[4] = (data->gyro_z) * (M_PI / 180);
-    imu[5] = data->acc_x;
-    imu[6] = data->acc_y;
-    imu[7] = (data->acc_z) - 9.81;
+    imu[0] = data->linear_acceleration.x;
+    imu[1] = data->linear_acceleration.y;
+    imu[2] = data->linear_acceleration.z;
+    imu[3] = data->angular_velocity.x;
+    imu[4] = data->angular_velocity.y;
+    imu[5] = data->angular_velocity.z;
+
+    // TODO: Check orientation of imu with respect to the dog
+    base_ang_vel[0] = data->angular_velocity.y;
+    base_ang_vel[1] = -data->angular_velocity.x;
+    base_ang_vel[2] = data->angular_velocity.z;
+
+    // TODO: Check orientation of imu with respect to the dog
+    float x = (float) data->linear_acceleration.x;
+    float y = (float) data->linear_acceleration.y;
+    float z = (float) data->linear_acceleration.z;
+    float normal = std::sqrt(x*x + y*y + z*z);
+    projected_gravity[0] = -y/normal;
+    projected_gravity[1] = x/normal;
+    projected_gravity[2] = -z/normal;
 }
+
+void RealInterface::vel_cb(const geometry_msgs::msg::Twist::SharedPtr data)
+{
+    float delta = 0.2
+    base_lin_vel[0] = delta * data->linear.x + (1-delta)*base_lin_vel[0];
+    base_lin_vel[1] = delta * data->linear.y + (1-delta)*base_lin_vel[1];
+    base_lin_vel[2] = delta * data->linear.z + (1-delta)*base_lin_vel[2];
+}
+
 
 void RealInterface::error_update(error_msgs::msg::Error::SharedPtr data)
 {
@@ -257,15 +302,28 @@ void RealInterface::cmd_cb(joint_msgs::msg::MiniCmd::SharedPtr data)
 }
 
 void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
-{
+{   
+    /* Up or down on the arrow pad. To be used to raise or lower the dog*/
     jb.updown = data->updown;
+
+    /* Left or right on the arrow pad. To be used to change the penetration depth*/
     jb.leftright = data->leftright;
+
+    /* Left bumper. To be used to turn the motors on or off (trigger action) */
     jb.left_bump = data->left_bump;
+
+    /* Right bumper. To be used to reset to default values */
     jb.right_bump = data->right_bump;
+
+    /* Start Button. To be used to begin the initial movement */
     jb.start_b = data->start_b;
+
+    /* Neural Net Button. To be used to begin or stop the neural net */
+    jb.nn_start_b = data->nn_start_b;
 
     if (ERROR_STATE == 0)
     {
+        /* If left bumper and only once while pressed, trigger motor state */
         if (data->left_bump && jbreleased){
             std_msgs::msg::Bool msg;
             if (motor_states == 0){
@@ -281,7 +339,21 @@ void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
         if (!data->left_bump){
             jbreleased = true;
         }
+
+        /* If neural net button pressed and only once while pressed, trigger neural net state */
+        if (data->nn_start_b && nnreleased){
+            nnreleased = false;
+            if (!nn_state){
+                nn_state = true;
+            } else {
+                nn_state = false;
+            }
+        }
+        if (!data->nn_start_b){
+            nnreleased = true;
+        }
         
+        /* If start button and released and not already started */
         if (data->start_b && sbreleased && !start_movement)
         {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Movement started!");
@@ -290,6 +362,7 @@ void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
             MatrixJoint xyz = get_xyz();
             stood = true;
 
+            /* Calculate difference vector in cartesia space for each leg to then move through that */
             uint8_t index = 0;
             for (auto& pair : T_bh) {
                 Eigen::Matrix4f foot = pair.second;
@@ -301,6 +374,8 @@ void RealInterface::jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data)
             }
 
             upt0 = this->get_clock()->now();
+
+        /* Start descend action, must be in default position when doing so */
         } else if (data->start_b && sbreleased && !standing && stood)
         {
             descend = true;
@@ -335,6 +410,7 @@ void RealInterface::control(){
             }
         } else if (start_movement) {
             rclcpp::Time tnow;
+            /* Make sure the dog is in standing mode */
             if (standing){
                 tnow = this->get_clock()->now();
                 rclcpp::Duration duration = tnow - upt0;
@@ -355,6 +431,8 @@ void RealInterface::control(){
 
                     publishall(ja);
                 }
+
+            /* If in descending mode */
             } else if (descend) {
                 tnow = this->get_clock()->now();
                 rclcpp::Duration duration = tnow - upt0;
@@ -376,6 +454,13 @@ void RealInterface::control(){
                     MatrixJoint ja = quadKine.IK({0,0,0}, {-com_offset,0,0}, T_bh_command);
                     publishall(ja);
                 }
+            
+            /* If not standing or descending and neural net selected */
+            } else if (nn_state) {
+                move_nn();
+
+
+            /* If not standing or descending or nn, do the general move control */
             } else {
                 move();
             }
@@ -390,7 +475,63 @@ MatrixJoint RealInterface::get_xyz()
     MatrixJoint xyz = quadKine.FK(joint_angles);
     return xyz;
 }
+
+
+void Realinterface::move_nn(){
+    float input_joints[12];
+    float input_vels[12];
+
+    for (uint8_t i = 0; i < 12; i++){
+        float pos = joint_angles((int) i/3, i%3);
+        float vel = joint_velocities_rpm((int) i/3, i%3);
+
+        input_joints[i] = pos/180*M_PI - joint_offsets[i%3];
+        input_vels[i] = vel/30*M_PI;
+    }
+
+    joint_msgs::msg::NeuralInput input_data;
     
+    input_data.base_lin_vel_x = base_lin_vel[0];
+    input_data.base_lin_vel_y = base_lin_vel[1];
+    input_data.base_lin_vel_z = base_lin_vel[2];
+    input_data.base_ang_vel_x = base_ang_vel[0];
+    input_data.base_ang_vel_y = base_ang_vel[1];
+    input_data.base_ang_vel_z = base_ang_vel[2];
+    input_data.projected_gravity_x = projected_gravity[0];
+    input_data.projected_gravity_y = projected_gravity[1];
+    input_data.projected_gravity_z = projected_gravity[2];
+    input_data.x_velocity = mini_cmd.x_velocity;
+    input_data.y_velocity = mini_cmd.y_velocity;
+    input_data.w_rate = mini_cmd.rate;
+    input_data.joint_angle_0 = input_joints[0];
+    input_data.joint_angle_1 = input_joints[1];
+    input_data.joint_angle_2 = input_joints[2];
+    input_data.joint_angle_3 = input_joints[3];
+    input_data.joint_angle_4 = input_joints[4];
+    input_data.joint_angle_5 = input_joints[5];
+    input_data.joint_angle_6 = input_joints[6];
+    input_data.joint_angle_7 = input_joints[7];
+    input_data.joint_angle_8 = input_joints[8];
+    input_data.joint_angle_9 = input_joints[9];
+    input_data.joint_angle_10 = input_joints[10];
+    input_data.joint_angle_11 = input_joints[11];
+    input_data.joint_velocity_0 = input_vels[0];
+    input_data.joint_velocity_1 = input_vels[1];
+    input_data.joint_velocity_2 = input_vels[2];
+    input_data.joint_velocity_3 = input_vels[3];
+    input_data.joint_velocity_4 = input_vels[4];
+    input_data.joint_velocity_5 = input_vels[5];
+    input_data.joint_velocity_6 = input_vels[6];
+    input_data.joint_velocity_7 = input_vels[7];
+    input_data.joint_velocity_8 = input_vels[8];
+    input_data.joint_velocity_9 = input_vels[9];
+    input_data.joint_velocity_10 = input_vels[10];
+    input_data.joint_velocity_11 = input_vels[11];
+
+    publish_with_net->publish(input_data);
+}
+
+
 void RealInterface::move(){
     Eigen::Vector3f pos = {0.0f, 0.0f ,0.0f};
     Eigen::Vector3f orn = {0.0f ,0.0f ,0.0f};
@@ -398,16 +539,16 @@ void RealInterface::move(){
     float LateralFraction = 0.0f;
     float YawRate = 0.0f;
 
-
+    /* If not stopped */
     if (mini_cmd.motion != "Stop")
     {
         StepVelocity = BaseStepVelocity;
         SwingPeriod = std::max(
                         std::min(BaseSwingPeriod + (-mini_cmd.faster - mini_cmd.slower) * SV_SCALE,
-                                 SwingPeriod_LIMITS[1]),
-                        SwingPeriod_LIMITS[0]);
+                                SwingPeriod_LIMITS[1]),
+                                SwingPeriod_LIMITS[0]);
         
-
+        /* If stepping calculate step length, side length and yaw to then generate movement */
         if (mini_cmd.movement == "Stepping") {
             StepLength = mini_cmd.x_velocity + std::fabs(mini_cmd.y_velocity * 0.66f);
             StepLength = std::max( std::min(StepLength,1.0f), -1.0f);
@@ -416,7 +557,8 @@ void RealInterface::move(){
             YawRate = mini_cmd.rate * YAW_SCALE;
             pos << 0.0f, 0.0f, 0.0f;
             orn << 0.0f, 0.0f, 0.0f;
-
+        
+        /* If Viewing set steps to 0 and only change orientation and position */
         } else {
             StepLength = 0.0f;
             LateralFraction = 0.0f;
@@ -429,6 +571,7 @@ void RealInterface::move(){
             pos << 0.0f, 0.0f, mini_cmd.z * Z_SCALE_CTRL;
             orn << mini_cmd.roll * RPY_SCALE, mini_cmd.pitch * RPY_SCALE, mini_cmd.yaw * RPY_SCALE;
         }
+    /* If stopped */
     } else {
         StepLength = 0.0f;
         LateralFraction = 0.0f;
@@ -445,6 +588,7 @@ void RealInterface::move(){
     ClearanceHeight += jb.updown * CHPD_SCALE;
     PenetrationDepth += jb.leftright * CHPD_SCALE;
 
+    /* Right bumper to reset values */
     if (jb.right_bump){
         ClearanceHeight = BaseClearanceHeight;
         PenetrationDepth = BasePenetrationDepth;

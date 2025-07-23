@@ -15,7 +15,7 @@ class StateMachine : public rclcpp::Node {
     public:
         StateMachine();
 
-        constexpr bool almost_equal(double d1, double d2, double epsilon=1.0e-1);
+        constexpr bool almost_equal(double d1, double d2, double epsilon=0.05);
 
         void update_command(const double & vx, const double & vy, const double & z,
                             const double & w, const double & wx, const double & wy);
@@ -31,6 +31,7 @@ class StateMachine : public rclcpp::Node {
     private:
 
         double filter(double value, double previous);
+        double filter_stronger(double value, double previous);
 
         enum Motion {Go, Stop};
         enum Movement {Stepping, Viewing};

@@ -208,10 +208,10 @@ void StateMachine::update_command(const double & vx, const double & vy, const do
             cmd.x_velocity = 0.0;
             cmd.y_velocity = 0.0;
             cmd.rate = 0.0;
-            cmd.roll = filter(vy, cmd.roll);
-            cmd.pitch = filter(vx, cmd.pitch);
-            cmd.yaw = filter(w, cmd.yaw);
-            cmd.z = filter(z, cmd.z);
+            cmd.roll = filter_stronger(vy, cmd.roll);
+            cmd.pitch = filter_stronger(vx, cmd.pitch);
+            cmd.yaw = filter_stronger(w, cmd.yaw);
+            cmd.z = filter_stronger(z, cmd.z);
             cmd.faster = 0.0;
             cmd.slower = 0.0;
         }
@@ -266,6 +266,11 @@ void StateMachine::switch_movement()
 double StateMachine::filter(double value, double previous)
 {
     return alpha * value + (1-alpha)*previous;
+}
+
+double StateMachine::filter_stronger(double value, double previous)
+{
+    return alpha/5 * value + (1-alpha/5)*previous;
 }
 
 int main(int argc, char * argv[])

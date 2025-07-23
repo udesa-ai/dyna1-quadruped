@@ -13,7 +13,7 @@
   <depend>rclcpp</depend>
   <depend>joint_msgs</depend>
   <depend>teleop_msgs</depend>
-  <depend>custom_sensor_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>error_msgs</depend>
 
