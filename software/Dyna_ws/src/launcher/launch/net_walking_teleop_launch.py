@@ -19,28 +19,20 @@ def generate_launch_description():
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
-    inter = Node(
-            package='can_interface',
+    uart_bridge = Node(
+            package='uart_bridge',
             namespace='',
-            executable='interface',
-            name='CAN_Interfacec',
+            executable='uart_bridge_node',
+            name='UARTbridge',
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
+
 
     motores = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory('motor_can'),'launch'),'/motor_launch.py']
         )
-    )
-
-    can_bridge = Node(
-            package='ros2socketcan_bridge',
-            namespace='',
-            executable='ros2can_bridge',
-            name='CANbridge',
-            parameters=[{'use_sim_time': use_sim_time}],
-            output="screen")
- 
+    ) 
 
     control = IncludeLaunchDescription(
     	PythonLaunchDescriptionSource(
@@ -52,15 +44,6 @@ def generate_launch_description():
         launch_arguments={'MAX_CURRENT':MAX_CURRENT}.items()
     )
 
-    imu = IncludeLaunchDescription(
-    	PythonLaunchDescriptionSource(
-            [
-                os.path.join(get_package_share_directory('bno055'), 'launch'),
-             			  '/bno055.launch.py'
-            ]
-        )
-    )
-
     safety = Node(
             package='safety',
             namespace='',
@@ -68,13 +51,7 @@ def generate_launch_description():
             name='Precautions',
             parameters=[{'use_sim_time': use_sim_time}],
             output="screen")
-    
-    optical = Node(package='serial_interface_py',
-            namespace='',
-            executable='serial_interface_py',
-            name='serial_interface_py',
-            output="screen",
-            )
+
 
     net = Node(package='neural_net',
             namespace='',
@@ -85,11 +62,8 @@ def generate_launch_description():
     
     return LaunchDescription([
         MAX_CURRENT_launch_arg,
-        inter,
-        imu,
+        uart_bridge,
         motores,
-        can_bridge,
         control,
         safety,
-        optical,
         net])
