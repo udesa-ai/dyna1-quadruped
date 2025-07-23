@@ -160,8 +160,6 @@ class NeuralNet(Node):
         t = self.get_clock().now()
         ja_msg.header.stamp = t.to_msg()
 
-        ja_msg.check_max = max_check
-
         self.pub_joint_angles.publish(ja_msg)
 
 
