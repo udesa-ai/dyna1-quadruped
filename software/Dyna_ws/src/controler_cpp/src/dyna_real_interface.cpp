@@ -226,19 +226,17 @@ void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
     imu[4] = data->angular_velocity.y;
     imu[5] = data->angular_velocity.z;
 
-    // TODO: Check orientation of imu with respect to the dog
-    base_ang_vel[0] = data->angular_velocity.y;
-    base_ang_vel[1] = -data->angular_velocity.x;
-    base_ang_vel[2] = data->angular_velocity.z;
+    base_ang_vel[0] = data->angular_velocity.z;
+    base_ang_vel[1] = data->angular_velocity.x;
+    base_ang_vel[2] = data->angular_velocity.y;
 
-    // TODO: Check orientation of imu with respect to the dog
-    float x = (float) data->linear_acceleration.x;
-    float y = (float) data->linear_acceleration.y;
-    float z = (float) data->linear_acceleration.z;
+    float x = (float) -data->linear_acceleration.z;
+    float y = (float) -data->linear_acceleration.x;
+    float z = (float) -data->linear_acceleration.y;
     float normal = std::sqrt(x*x + y*y + z*z);
-    projected_gravity[0] = -y/normal;
-    projected_gravity[1] = x/normal;
-    projected_gravity[2] = -z/normal;
+    projected_gravity[0] = x/normal;
+    projected_gravity[1] = y/normal;
+    projected_gravity[2] = z/normal;
 }
 
 void RealInterface::vel_cb(const geometry_msgs::msg::Twist::SharedPtr data)
@@ -540,9 +538,7 @@ void RealInterface::move(){
     float YawRate = 0.0f;
 
     /* If not stopped */
-    // using absolute values to avoid problems with small values
-    if (mini_cmd.motion != "Stop" or (std::fabs(mini_cmd.x_velocity) > 0.01f or std::fabs(mini_cmd.y_velocity) > 0.01f or std::fabs(mini_cmd.rate) > 0.01f   
-        or std::fabs(mini_cmd.roll) > 0.01f or std::fabs(mini_cmd.pitch) > 0.01f or std::fabs(mini_cmd.yaw) > 0.01f or std::fabs(mini_cmd.z) > 0.01f))
+    if (mini_cmd.motion != "Stop")
     {
         StepVelocity = BaseStepVelocity;
         SwingPeriod = std::max(

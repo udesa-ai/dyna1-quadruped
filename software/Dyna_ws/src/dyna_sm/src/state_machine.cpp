@@ -177,13 +177,13 @@ void StateMachine::update_command(const double & vx, const double & vy, const do
     if (almost_equal(vx, 0.0) and almost_equal(vy, 0.0) and almost_equal(z, 0.0) and almost_equal(w, 0.0))
     {
         cmd.motion = Stop;
-        cmd.x_velocity = filter_stronger(0.0, cmd.x_velocity);
-        cmd.y_velocity = filter_stronger(0.0, cmd.y_velocity);
-        cmd.rate = filter_stronger(0.0, cmd.rate);
-        cmd.roll = filter_stronger(0.0, cmd.roll);
-        cmd.pitch = filter_stronger(0.0, cmd.pitch);
-        cmd.yaw = filter_stronger(0.0, cmd.yaw);
-        cmd.z = filter_stronger(0.0, cmd.z);
+        cmd.x_velocity = 0.0;
+        cmd.y_velocity = 0.0;
+        cmd.rate = 0.0;
+        cmd.roll = 0.0;
+        cmd.pitch = 0.0;
+        cmd.yaw = 0.0;
+        cmd.z = 0.0;
         cmd.faster = 0.0;
         cmd.slower = 0.0;
     } else
