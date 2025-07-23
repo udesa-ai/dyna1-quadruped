@@ -174,7 +174,8 @@ void StateMachine::swm_callback(const std_msgs::msg::Bool::SharedPtr msg)
 void StateMachine::update_command(const double & vx, const double & vy, const double & z,
 							  const double & w, const double & wx, const double & wy)
 {
-    if (almost_equal(vx, 0.0) and almost_equal(vy, 0.0) and almost_equal(z, 0.0) and almost_equal(w, 0.0))
+    //if (almost_equal(vx, 0.0) and almost_equal(vy, 0.0) and almost_equal(z, 0.0) and almost_equal(w, 0.0))
+    if (almost_equal(cmd.x_velocity, 0.0) and almost_equal(cmd.y_velocity, 0.0) and almost_equal(cmd.rate, 0.0))
     {
         cmd.motion = Stop;
         cmd.x_velocity = 0.0;
