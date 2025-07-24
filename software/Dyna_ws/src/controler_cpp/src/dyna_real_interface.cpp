@@ -264,18 +264,18 @@ void RealInterface::error_update(error_msgs::msg::Error::SharedPtr data)
 
 void RealInterface::update_data(joint_msgs::msg::OdriveData::SharedPtr data)
 {
-    joint_angles << data->angles.flshoulder, data->angles.flarm, data->angles.flfoot,
-                    data->angles.frshoulder, data->angles.frarm, data->angles.frfoot,
+    joint_angles << data->angles.frshoulder, data->angles.frarm, data->angles.frfoot,
+                    data->angles.flshoulder, data->angles.flarm, data->angles.flfoot,
                     data->angles.blshoulder, data->angles.blarm, data->angles.blfoot,
                     data->angles.brshoulder, data->angles.brarm, data->angles.brfoot;
     
-    joint_velocities_rpm << data->velocities.flshoulder, data->velocities.flarm, data->velocities.flfoot,
-                      data->velocities.frshoulder, data->velocities.frarm, data->velocities.frfoot,
+    joint_velocities_rpm << data->velocities.frshoulder, data->velocities.frarm, data->velocities.frfoot,
+                      data->velocities.flshoulder, data->velocities.flarm, data->velocities.flfoot,
                       data->velocities.blshoulder, data->velocities.blarm, data->velocities.blfoot,
                       data->velocities.brshoulder, data->velocities.brarm, data->velocities.brfoot;
 
-    joint_currents << data->currents.flshoulder, data->currents.flarm, data->currents.flfoot,
-                      data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
+    joint_currents << data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
+                      data->currents.flshoulder, data->currents.flarm, data->currents.flfoot,
                       data->currents.blshoulder, data->currents.blarm, data->currents.blfoot,
                       data->currents.brshoulder, data->currents.brarm, data->currents.brfoot;
 
