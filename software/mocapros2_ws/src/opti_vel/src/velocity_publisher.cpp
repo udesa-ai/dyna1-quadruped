@@ -54,6 +54,7 @@ private:
       double dy = current_pose.position.y - prev_pose_.position.y;
       double dz = current_pose.position.z - prev_pose_.position.z;
 
+      dt = 0.01;
       // Velocity in world frame
       tf2::Vector3 vel_world(dx / dt, dy / dt, dz / dt);
 
@@ -64,6 +65,11 @@ private:
       tf2::Vector3 vel_body = rot_matrix.transpose() * vel_world;
 
       geometry_msgs::msg::Twist twist;
+      // clip linear velocity to maximum of +-2 m/s
+      double max_linear_velocity = 2.0;
+      vel_body.setX(std::clamp(vel_body.x(), -max_linear_velocity, max_linear_velocity));
+      vel_body.setY(std::clamp(vel_body.y(), -max_linear_velocity, max_linear_velocity));
+      vel_body.setZ(std::clamp(vel_body.z(), -max_linear_velocity, max_linear_velocity));
       twist.linear.x = vel_body.x();
       twist.linear.y = vel_body.y();
       twist.linear.z = vel_body.z();

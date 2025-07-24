@@ -62,7 +62,7 @@ for axiss in get_this:
 
 plt.figure()
 for axis in allofthem:
-    plt.plot(command['time_start'], command[axis], label = axis)
+    plt.plot(command['time_start'], command[axis]/180*np.pi, label = axis)
 plt.legend()
 
 #############################################################################
