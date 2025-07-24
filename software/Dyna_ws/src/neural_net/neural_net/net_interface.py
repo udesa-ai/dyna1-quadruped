@@ -124,6 +124,8 @@ class NeuralNet(Node):
         input_data[36:48] = self.actions
 
         input_data = [float(value) for value in input_data]
+        # log input data
+        # self.get_logger().info(f'Input Data: {input_data}')
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
         self.actions = output
         self.real_actions = []
@@ -131,8 +133,10 @@ class NeuralNet(Node):
         offsets = [0.0, -0.79, 1.5]
         for index, action in enumerate(temp_actions):
             self.real_actions.append(0.25*action + offsets[index%3])
+        self.real_actions[0] = -0.25*self.actions[0] + 0.0
+        self.real_actions[1] = -0.25*self.actions[1] - 0.79
         # print joint agles with logger
-        self.get_logger().info(f'Joint Angles: {self.real_actions}')
+        # self.get_logger().info(f'Joint Angles: {self.real_actions}')
         self.publishall([self.real_actions[0:3], self.real_actions[3:6], self.real_actions[6:9], self.real_actions[9:12]])
 
 

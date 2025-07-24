@@ -226,9 +226,9 @@ void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
     imu[4] = data->angular_velocity.y;
     imu[5] = data->angular_velocity.z;
 
-    base_ang_vel[0] = data->angular_velocity.z;
-    base_ang_vel[1] = data->angular_velocity.x;
-    base_ang_vel[2] = data->angular_velocity.y;
+    base_ang_vel[0] = (data->angular_velocity.z/180)*M_PI; // Convert to rad/s
+    base_ang_vel[1] = (data->angular_velocity.x/180)*M_PI; // Convert to rad/s
+    base_ang_vel[2] = (data->angular_velocity.y/180)*M_PI; // Convert to rad/s
 
     float x = (float) -data->linear_acceleration.z;
     float y = (float) -data->linear_acceleration.x;
