@@ -264,18 +264,18 @@ void RealInterface::error_update(error_msgs::msg::Error::SharedPtr data)
 
 void RealInterface::update_data(joint_msgs::msg::OdriveData::SharedPtr data)
 {
-    joint_angles << data->angles.frshoulder, data->angles.frarm, data->angles.frfoot,
-                    data->angles.flshoulder, data->angles.flarm, data->angles.flfoot,
+    joint_angles << data->angles.flshoulder, data->angles.flarm, data->angles.flfoot,
+                    data->angles.frshoulder, data->angles.frarm, data->angles.frfoot,
                     data->angles.blshoulder, data->angles.blarm, data->angles.blfoot,
                     data->angles.brshoulder, data->angles.brarm, data->angles.brfoot;
     
-    joint_velocities_rpm << data->velocities.frshoulder, data->velocities.frarm, data->velocities.frfoot,
-                      data->velocities.flshoulder, data->velocities.flarm, data->velocities.flfoot,
+    joint_velocities_rpm << data->velocities.flshoulder, data->velocities.flarm, data->velocities.flfoot,
+                      data->velocities.frshoulder, data->velocities.frarm, data->velocities.frfoot,
                       data->velocities.blshoulder, data->velocities.blarm, data->velocities.blfoot,
                       data->velocities.brshoulder, data->velocities.brarm, data->velocities.brfoot;
 
-    joint_currents << data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
-                      data->currents.flshoulder, data->currents.flarm, data->currents.flfoot,
+    joint_currents << data->currents.flshoulder, data->currents.flarm, data->currents.flfoot,
+                      data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
                       data->currents.blshoulder, data->currents.blarm, data->currents.blfoot,
                       data->currents.brshoulder, data->currents.brarm, data->currents.brfoot;
 
@@ -501,24 +501,24 @@ void RealInterface::move_nn(){
     input_data.x_velocity = mini_cmd.x_velocity;
     input_data.y_velocity = mini_cmd.y_velocity;
     input_data.w_rate = mini_cmd.rate;
-    input_data.joint_angle_0 = input_joints[0];
-    input_data.joint_angle_1 = input_joints[1];
-    input_data.joint_angle_2 = input_joints[2];
-    input_data.joint_angle_3 = input_joints[3];
-    input_data.joint_angle_4 = input_joints[4];
-    input_data.joint_angle_5 = input_joints[5];
+    input_data.joint_angle_0 = input_joints[3];
+    input_data.joint_angle_1 = input_joints[4];
+    input_data.joint_angle_2 = input_joints[5];
+    input_data.joint_angle_3 = input_joints[0];
+    input_data.joint_angle_4 = input_joints[1];
+    input_data.joint_angle_5 = input_joints[2];
     input_data.joint_angle_6 = input_joints[6];
     input_data.joint_angle_7 = input_joints[7];
     input_data.joint_angle_8 = input_joints[8];
     input_data.joint_angle_9 = input_joints[9];
     input_data.joint_angle_10 = input_joints[10];
     input_data.joint_angle_11 = input_joints[11];
-    input_data.joint_velocity_0 = input_vels[0];
-    input_data.joint_velocity_1 = input_vels[1];
-    input_data.joint_velocity_2 = input_vels[2];
-    input_data.joint_velocity_3 = input_vels[3];
-    input_data.joint_velocity_4 = input_vels[4];
-    input_data.joint_velocity_5 = input_vels[5];
+    input_data.joint_velocity_0 = input_vels[3];
+    input_data.joint_velocity_1 = input_vels[4];
+    input_data.joint_velocity_2 = input_vels[5];
+    input_data.joint_velocity_3 = input_vels[0];
+    input_data.joint_velocity_4 = input_vels[1];
+    input_data.joint_velocity_5 = input_vels[2];
     input_data.joint_velocity_6 = input_vels[6];
     input_data.joint_velocity_7 = input_vels[7];
     input_data.joint_velocity_8 = input_vels[8];
