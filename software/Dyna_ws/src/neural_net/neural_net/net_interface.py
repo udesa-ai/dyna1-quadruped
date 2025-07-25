@@ -32,7 +32,7 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/model_9950.pt", map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/model_9950.pt") #, map_location=torch.device('cpu'))
 
         model_state_dict = checkpoint['model_state_dict']
         actor_state_dict = {k.replace('actor.', 'model.'): v for k, v in model_state_dict.items() if k.startswith('actor.')} 
