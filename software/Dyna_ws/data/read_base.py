@@ -14,7 +14,7 @@ max_current = 50
 # Get latest data directory from data directory
 current_working_directory = os.path.dirname(os.path.abspath(__file__))
 list_of_files = glob.glob(os.path.join(current_working_directory,'*'))
-list_of_files = [file for file in list_of_files if '.py' not in file and 'csv' not in file]
+list_of_files = [file for file in list_of_files if '.py' not in file and 'csv' not in file and 'txt' not in file] 
 list_of_files.sort()
 # latest_file = max(list_of_files, key=os.path.getctime)
 
