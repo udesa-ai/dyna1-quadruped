@@ -146,19 +146,19 @@ class NeuralNet(Node):
 
         ja_msg = Joints()
         
-        ja_msg.frshoulder = angles[0]
+        ja_msg.frshoulder = -angles[0]
         ja_msg.frarm = angles[1]
         ja_msg.frfoot = angles[2]
 
-        ja_msg.flshoulder = angles[3]
+        ja_msg.flshoulder = -angles[3]
         ja_msg.flarm = angles[4]
         ja_msg.flfoot = angles[5]
 
-        ja_msg.blshoulder = angles[6]
+        ja_msg.blshoulder = -angles[6]
         ja_msg.blarm = angles[7]
         ja_msg.blfoot = angles[8]
 
-        ja_msg.brshoulder = angles[9]
+        ja_msg.brshoulder = -angles[9]
         ja_msg.brarm = angles[10]
         ja_msg.brfoot = angles[11]
         
