@@ -1,6 +1,7 @@
 import serial
 import time
 import struct
+import threading
 
 class UARTBridge:
 
@@ -30,11 +31,18 @@ class UARTBridge:
 
         self.SYNC = b'>>>'
 
+        # Logging related
+        self.logging = False
+        self.log_thread = None
+        self.raw_log = []  # list of (timestamp, bytes)
+
 
     def open(self):
-        self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
+        self.ser = serial.Serial(self.port, self.baudrate, timeout=0)  # non-blocking for logging
+        self.ser.reset_input_buffer()
 
     def close(self):
+        self.stop_logging()
         if self.ser:
             self.ser.close()
 
@@ -50,8 +58,8 @@ class UARTBridge:
                 crc &= 0xFFFF
         return crc
 
-    def send_on_off(self, state = None, motor = None):
-        if state == None and motor == None:
+    def send_on_off(self, state=None, motor=None):
+        if state is None and motor is None:
             for m in self.motors.values():
                 self.send_motor_state(m, 1)
                 time.sleep(0.1)
@@ -59,7 +67,7 @@ class UARTBridge:
                 time.sleep(0.1)
         else:
             state = 1 if state == 'on' else 0
-            if motor == None:
+            if motor is None:
                 for m in self.motors.values():
                     self.send_motor_state(m, state)
                     time.sleep(0.1)
@@ -197,8 +205,8 @@ class UARTBridge:
 
                 topic_id = buffer[sync_index + 3]
                 length = (buffer[sync_index + 5] << 8) | buffer[sync_index + 6]
-                print(f'Length is {length}')
-                print(f'Buffer: {buffer[sync_index:].hex()}')
+                # print(f'Length is {length}')
+                # print(f'Buffer: {buffer[sync_index:].hex()}')
                 frame_len = 3 + 1 + 1 + 2 + 2 + length
 
                 if len(buffer) < sync_index + frame_len:
@@ -254,3 +262,125 @@ class UARTBridge:
         frame_bytes = bytes(frame)
         self.ser.write(frame_bytes)
         #print(frame_bytes.hex())
+
+    # ------------------------------
+    # Logging functionality
+    # ------------------------------
+
+    def start_logging(self):
+        if self.logging:
+            return
+        self.logging = True
+        self.raw_log.clear()
+        self.log_thread = threading.Thread(target=self._log_loop, daemon=True)
+        self.log_thread.start()
+
+    def stop_logging(self):
+        self.logging = False
+        if self.log_thread:
+            self.log_thread.join()
+            self.log_thread = None
+
+    def _log_loop(self):
+        while self.logging:
+            data = self.ser.read_all()
+            if data:
+                ts = time.monotonic()
+                self.raw_log.append((ts, bytes(data)))
+            time.sleep(0.001)  # small pause to avoid CPU spin
+
+    def save_log(self, filename):
+        with open(filename, "wb") as f:
+            for ts, data in self.raw_log:
+                ts_ns = int(ts * 1e9)
+                f.write(ts_ns.to_bytes(8, "little"))
+                f.write(len(data).to_bytes(2, "little"))
+                f.write(data)
+
+    def parser(self, filename):
+        buffer = bytearray()
+        sync_len = len(self.SYNC)
+        sync_timestamp = None
+        entries = self.load_log(filename)
+        parsed_data = []
+        for timestamp, data_chunk in entries:
+            # print(f"Timestamp: {timestamp:.6f} seconds, Data: {data_chunk.hex()}")
+            # Append new data to buffer
+            buffer.extend(data_chunk)
+            # Scan for frames
+            search_index = 0
+            while True:
+                sync_index = buffer.find(self.SYNC, search_index)
+
+                if sync_index == -1:
+                    break  # no more sync found
+
+                if sync_timestamp is None:
+                    # First appearance of sync in this frame
+                    sync_timestamp = timestamp
+
+                # Check if we have enough for header
+                if len(buffer) < sync_index + 7:  # minimal header length check
+                    break
+
+                topic_id = buffer[sync_index + 3]
+                length = (buffer[sync_index + 5] << 8) | buffer[sync_index + 6]
+
+                frame_len = 3 + 1 + 1 + 2 + 2 + length  # sync + topic + ?? + len + crc + payload
+
+                if len(buffer) < sync_index + frame_len:
+                    break  # incomplete frame
+
+                frame = buffer[sync_index:sync_index + frame_len]
+
+                # Remove processed data from buffer
+                del buffer[:sync_index + frame_len]
+
+                # Reset search to beginning (after deletion)
+                search_index = 0
+
+                # Extract payload (skip header bytes & CRC at end)
+                payload = frame[9:-4]
+
+                # Unpack floats
+                floats = struct.unpack('<42f', payload)
+
+                imu = {
+                    'accel': floats[0:3],
+                    'gyro': floats[3:6],
+                }
+
+                motors = {}
+                for i, name in enumerate(self.motors.keys()):
+                    pos = floats[6 + i]
+                    vel = floats[18 + i]
+                    curr = floats[30 + i]
+                    motors[name] = {'pos': pos, 'vel': vel, 'curr': curr}
+
+                parsed_data.append({
+                    'timestamp': sync_timestamp,
+                    'topic_id': topic_id,
+                    'imu': imu,
+                    'motors': motors,
+                    'vel': vel,
+                    'curr': curr
+                })
+
+                # Reset sync timestamp for next frame
+                sync_timestamp = None
+
+        return parsed_data
+
+    @staticmethod
+    def load_log(filename):
+        entries = []
+        with open(filename, "rb") as f:
+            while True:
+                ts_bytes = f.read(8)
+                if not ts_bytes:
+                    break
+                ts = int.from_bytes(ts_bytes, "little") / 1e9
+                length = int.from_bytes(f.read(2), "little")
+                data = f.read(length)
+                entries.append((ts, data))
+        return entries

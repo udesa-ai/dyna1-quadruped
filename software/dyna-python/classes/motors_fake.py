@@ -55,3 +55,8 @@ class Motors:
         for motor in motors:
             angle = self.brushless[motor].get_angle()/self.rrate
             motors[motor] = angle
+    
+    def angle_to_position(self, motors):
+        for motor in motors:
+            pos = self.brushless[motor].input_ang_to_pos(motors[motor]*self.rrate)
+            motors[motor] = pos

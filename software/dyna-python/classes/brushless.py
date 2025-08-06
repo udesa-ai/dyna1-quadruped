@@ -78,6 +78,24 @@ class BrushlessMotor:
         return self.direc * self.velocity*60
 
 
+    def input_pos(self, position):
+        """
+        input_pos: Send a position request. The motor must be in closed loop
+        and in position control to be able to move to the required position
+        :param position: desired position. Measured in turns with respect to
+                         the 0 turns position
+        """
+        return self.direc * position
+    
+
+    def input_ang_to_pos(self, angle):
+        """
+        input_ang: Request a motor angle. The angle request is converted to 
+        a position request via ang_to_pos()
+        :param angle: desired angle measured with respect to the indicated 0
+                      degree position. Measured in degrees
+        """
+        return self.input_pos(self.ang_to_pos(angle))
 ################################################################
 
 

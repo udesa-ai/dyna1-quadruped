@@ -5,17 +5,18 @@ from joint_msgs.msg import Joints, NeuralInput
 import time
 import torch
 import torch.nn as nn
+from ahrs.filters import Madgwick
 
 # Define the model architecture
 class ActorMLP(nn.Module):
     def __init__(self):
         super(ActorMLP, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(48, 128),
+            nn.Linear(48, 512),
             nn.ELU(alpha=1.0),
-            nn.Linear(128, 128),
+            nn.Linear(512, 256),
             nn.ELU(alpha=1.0),
-            nn.Linear(128, 128),
+            nn.Linear(256, 128),
             nn.ELU(alpha=1.0),
             nn.Linear(128, 12)
         )
@@ -32,7 +33,7 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/model_4350.pt") #, map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/model_9950.pt") #, map_location=torch.device('cpu'))
 
         model_state_dict = checkpoint['model_state_dict']
         actor_state_dict = {k.replace('actor.', 'model.'): v for k, v in model_state_dict.items() if k.startswith('actor.')} 
@@ -40,6 +41,9 @@ class NeuralNet(Node):
         self.model = ActorMLP()
         self.model.load_state_dict(actor_state_dict)
         self.model.eval()
+
+        self.madgwick = Madgwick(sampleperiod=1/100)
+        self.q = np.array([1.0, 0.0, 0.0, 0.0])  # Initial quaternion
 
         # Actions
         self.actions = [0,0,0,0,0,0,0,0,0,0,0,0]
@@ -63,6 +67,16 @@ class NeuralNet(Node):
         # ROS info print
         self.get_logger().info('Neural Net controller initialized')
 
+        self.iteration_i = 0
+        self.iteration_a = 0
+
+    def quat_to_rotmat(self, q):
+        w, x, y, z = q
+        return np.array([
+            [1 - 2*(y**2 + z**2),     2*(x*y - z*w),       2*(x*z + y*w)],
+            [    2*(x*y + z*w),   1 - 2*(x**2 + z**2),     2*(y*z - x*w)],
+            [    2*(x*z - y*w),       2*(y*z + x*w),   1 - 2*(x**2 + y**2)]
+        ])
 
     def change_order(self, values, forwards = True):
         if forwards:
@@ -84,11 +98,43 @@ class NeuralNet(Node):
         input_data[3] = msg.base_ang_vel_x
         input_data[4] = msg.base_ang_vel_y
         input_data[5] = msg.base_ang_vel_z
-        input_data[6] = 0.0 #msg.projected_gravity_x
-        input_data[7] = 0.0 #msg.projected_gravity_y
-        input_data[8] = -1.0 #msg.projected_gravity_z
-        input_data[9] = msg.x_velocity
-        input_data[10] = msg.y_velocity
+
+        gyro = np.array([msg.base_ang_vel_x-0.00828264,
+                     msg.base_ang_vel_y-0.00828264,
+                     msg.base_ang_vel_z+0.01474347])
+    
+        # Accel in m/s^2 (normalize inside filter)
+        accel = np.array([-msg.projected_gravity_x,
+                        -msg.projected_gravity_y,
+                        -msg.projected_gravity_z])
+
+        # Update quaternion
+        self.q = self.madgwick.updateIMU(self.q, gyr=gyro, acc=accel)
+
+        # Compute projected gravity from quaternion
+        # Rotation matrix from quaternion:
+        R = self.quat_to_rotmat(self.q)
+        g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
+
+        input_data[6:9] = g_proj
+        # print(g_proj)
+
+        # input_data[6] = 0.0 #msg.projected_gravity_x
+        # input_data[7] = 0.0 #msg.projected_gravity_y
+        # input_data[8] = -1.0 #msg.projected_gravity_z
+
+        vx = msg.x_velocity
+        vy = msg.y_velocity
+
+        norm = np.sqrt(vx**2 + vy**2)
+
+        if norm > 1.0:
+            vx /= norm
+            vy /= norm
+
+        input_data[9] = vx
+        input_data[10] = vy
+        
         input_data[11] = msg.w_rate
 
         input_joints = [0.0]*12
@@ -125,7 +171,7 @@ class NeuralNet(Node):
 
         input_data = [float(value) for value in input_data]
         # log input data
-        # self.get_logger().info(f'Input Data: {input_data}')
+        # self.print_input(input_data)
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
         self.actions = output
         self.real_actions = []
@@ -133,10 +179,33 @@ class NeuralNet(Node):
         offsets = [0.0, -0.79, 1.5]
         for index, action in enumerate(temp_actions):
             self.real_actions.append(0.25*action + offsets[index%3])
-        # print joint agles with logger
-        # self.get_logger().info(f'Joint Angles: {self.real_actions}')
+        # # log output actions every 50 iterations
+        # if self.iteration_a == 50:
+        #     self.iteration_a = 0
+        #     self.get_logger().info(f'Output Actions: {[f"{action:.3f}" for action in self.actions]}')
+        # else:
+        #     self.iteration_a += 1
+        # Publish the actions
         self.publishall([self.real_actions[0:3], self.real_actions[3:6], self.real_actions[6:9], self.real_actions[9:12]])
 
+    def print_input(self, input_data):
+        # Print every 50 iterations
+        if self.iteration_i == 50:
+            self.iteration_i = 0
+        else:
+            self.iteration_i += 1
+            return
+        # log input data with 3 decimal places
+        text = f'''Input Data: 
+        \tBase Linear Velocity: x={input_data[0]:.2f}, y={input_data[1]:.2f}, z={input_data[2]:.2f}
+        \tBase Angular Velocity: x={input_data[3]:.2f}, y={input_data[4]:.2f}, z={input_data[5]:.2f}
+        \tProjected Gravity: x={input_data[6]:.2f}, y={input_data[7]:.2f}, z={input_data[8]:.2f}
+        \tDesired Velocities: x={input_data[9]:.2f}, y={input_data[10]:.2f}, w={input_data[11]:.2f}
+        \tJoint Angles: {[f"{data:.3f}" for data in input_data[12:24]]}
+        \tJoint Velocities: {[f"{data:.3f}" for data in input_data[24:36]]}
+        \tPrevious Actions: {[f"{data:.3f}" for data in input_data[36:48]]}'''
+        self.get_logger().info(text)
+        
 
     def publishall(self, joint_angles):
         angles = [np.degrees(joint_angles[0][0]), np.degrees(joint_angles[0][1]), np.degrees(joint_angles[0][2]),
