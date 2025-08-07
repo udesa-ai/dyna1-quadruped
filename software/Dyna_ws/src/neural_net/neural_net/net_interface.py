@@ -80,21 +80,21 @@ class NeuralNet(Node):
 
     def change_order(self, values, forwards = True):
         if forwards:
-            return [values[6], values[9], values[0], values[3],
-                    values[7], values[10], values[1], values[4],
-                    values[8], values[11], values[2], values[5]]
+            return [values[6], values[9], values[3], values[0],
+                    values[7], values[10], values[4], values[1],
+                    values[8], values[11], values[5], values[2]]
         else:
-            return [values[2], values[6], values[10],
-                    values[3], values[7], values[11],
+            return [values[3], values[7], values[11],
+                    values[2], values[6], values[10], 
                     values[0], values[4], values[8],
                     values[1], values[5], values[9]]
-        
+    
 
     def listener_neural(self, msg):
         input_data = [0.0]*48
-        input_data[0] = msg.base_lin_vel_x
-        input_data[1] = msg.base_lin_vel_y
-        input_data[2] = msg.base_lin_vel_z
+        input_data[0] = 0.0 # msg.base_lin_vel_x
+        input_data[1] = 0.0 # msg.base_lin_vel_y
+        input_data[2] = 0.0 # msg.base_lin_vel_z
         input_data[3] = msg.base_ang_vel_x
         input_data[4] = msg.base_ang_vel_y
         input_data[5] = msg.base_ang_vel_z
@@ -215,19 +215,19 @@ class NeuralNet(Node):
 
         ja_msg = Joints()
         
-        ja_msg.frshoulder = -angles[0]
+        ja_msg.frshoulder = angles[0]
         ja_msg.frarm = angles[1]
         ja_msg.frfoot = angles[2]
 
-        ja_msg.flshoulder = -angles[3]
+        ja_msg.flshoulder = angles[3]
         ja_msg.flarm = angles[4]
         ja_msg.flfoot = angles[5]
 
-        ja_msg.blshoulder = -angles[6]
+        ja_msg.blshoulder = angles[6]
         ja_msg.blarm = angles[7]
         ja_msg.blfoot = angles[8]
 
-        ja_msg.brshoulder = -angles[9]
+        ja_msg.brshoulder = angles[9]
         ja_msg.brarm = angles[10]
         ja_msg.brfoot = angles[11]
         
