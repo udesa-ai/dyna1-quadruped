@@ -95,9 +95,7 @@ class NeuralNet(Node):
         input_data[0] = 0.0 # msg.base_lin_vel_x
         input_data[1] = 0.0 # msg.base_lin_vel_y
         input_data[2] = 0.0 # msg.base_lin_vel_z
-        input_data[3] = msg.base_ang_vel_x
-        input_data[4] = msg.base_ang_vel_y
-        input_data[5] = msg.base_ang_vel_z
+        
 
         gyro = np.array([msg.base_ang_vel_x-0.00828264,
                      msg.base_ang_vel_y-0.00828264,
@@ -116,6 +114,7 @@ class NeuralNet(Node):
         R = self.quat_to_rotmat(self.q)
         g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
 
+        input_data[3:5] = gyro
         input_data[6:9] = g_proj
         # print(g_proj)
 

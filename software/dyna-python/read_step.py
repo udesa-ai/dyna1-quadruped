@@ -2,7 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 
-csv_filename = "data/log_step_curve_arm_30A.csv"
+csv_filename = "data/log_step_curve_arm_40A.csv"
 
 log_time = []
 keys = ['FRshoulder', 'FRarm', 'FRfoot']
@@ -17,6 +17,24 @@ fr_foot = []
 fr_shoulder_current = []
 fr_arm_current = []
 fr_foot_current = []
+
+nico_values = []
+
+with open('data/data.csv', newline='') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        nico_values.append(float(row['position']))
+
+plt.figure()
+plt.plot(nico_values)
+plt.show()
+
+nico_values = np.array(nico_values)
+
+nico_time = np.arange(0, len(nico_values) * 0.01, 0.01)
+nico_time -= nico_time[499]
+
+# nico_time = np.arange(0, , 0.1)  # Example time array for Nico's data
 
 # --- Read CSV ---
 with open(csv_filename, newline='') as f:
@@ -55,6 +73,7 @@ plt.subplot(3, 1, 2)
 plt.plot(time_measured, fr_arm, label='Measured FRarm')
 plt.title('FRarm')
 plt.plot(log_time, log_requested['FRarm'], label='Requested FRarm')
+plt.plot(nico_time, nico_values*180/np.pi, label='Nico Position', linestyle='--')
 plt.xlim(-1, max(max(log_time), max(time_measured)))
 plt.legend()
 
