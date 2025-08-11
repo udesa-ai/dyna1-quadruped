@@ -35,6 +35,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Estimates.msg"
   "msg/JointEstimates.msg"
   "msg/NeuralInput.msg"
+  "msg/NeuralInputComplete.msg"
   DEPENDENCIES builtin_interfaces  geometry_msgs std_msgs
 )
 
