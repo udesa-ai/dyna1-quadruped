@@ -34,7 +34,6 @@ float32 joint_velocity_8
 float32 joint_velocity_9
 float32 joint_velocity_10
 float32 joint_velocity_11
-float32 joint_velocity_0
 float32 previous_action_0
 float32 previous_action_1
 float32 previous_action_2
