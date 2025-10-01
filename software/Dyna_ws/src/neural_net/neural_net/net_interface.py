@@ -117,13 +117,13 @@ class NeuralNet(Node):
         R = self.quat_to_rotmat(self.q)
         g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
 
-        input_data[3:5] = gyro
+        input_data[3:6] = gyro
         input_data[6:9] = g_proj
         # print(g_proj)
 
-        input_data[6] = msg.projected_gravity_x
-        input_data[7] = msg.projected_gravity_y
-        input_data[8] = msg.projected_gravity_z
+        # input_data[6] = msg.projected_gravity_x
+        # input_data[7] = msg.projected_gravity_y
+        # input_data[8] = msg.projected_gravity_z
 
         vx = msg.x_velocity
         vy = msg.y_velocity
