@@ -12,11 +12,11 @@ class ActorMLP(nn.Module):
     def __init__(self):
         super(ActorMLP, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(48, 512),
+            nn.Linear(48, 128),
             nn.ELU(alpha=1.0),
-            nn.Linear(512, 256),
+            nn.Linear(128, 128),
             nn.ELU(alpha=1.0),
-            nn.Linear(256, 128),
+            nn.Linear(128, 128),
             nn.ELU(alpha=1.0),
             nn.Linear(128, 12)
         )
@@ -33,7 +33,7 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/model_9950.pt") #, map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/model_4350.pt") #, map_location=torch.device('cpu'))
 
         model_state_dict = checkpoint['model_state_dict']
         actor_state_dict = {k.replace('actor.', 'model.'): v for k, v in model_state_dict.items() if k.startswith('actor.')} 
@@ -119,9 +119,9 @@ class NeuralNet(Node):
         input_data[6:9] = g_proj
         # print(g_proj)
 
-        # input_data[6] = 0.0 #msg.projected_gravity_x
-        # input_data[7] = 0.0 #msg.projected_gravity_y
-        # input_data[8] = -1.0 #msg.projected_gravity_z
+        input_data[6] = msg.projected_gravity_x
+        input_data[7] = msg.projected_gravity_y
+        input_data[8] = msg.projected_gravity_z
 
         vx = msg.x_velocity
         vy = msg.y_velocity
