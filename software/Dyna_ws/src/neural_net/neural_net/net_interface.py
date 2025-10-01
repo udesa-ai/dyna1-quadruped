@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
-from joint_msgs.msg import Joints, NeuralInput
+from joint_msgs.msg import Joints, NeuralInput, NeuralInputComplete
 import time
 import torch
 import torch.nn as nn
@@ -64,6 +64,9 @@ class NeuralNet(Node):
         # Publisher joint request
         self.pub_joint_angles = self.create_publisher(Joints, 'joint_requests', 1)
 
+        # Publisher net input for debugging
+        self.pub_net_input = self.create_publisher(NeuralInputComplete, 'net_input_debugging', 1)
+
         # ROS info print
         self.get_logger().info('Neural Net controller initialized')
 
@@ -95,9 +98,7 @@ class NeuralNet(Node):
         input_data[0] = 0.0 # msg.base_lin_vel_x
         input_data[1] = 0.0 # msg.base_lin_vel_y
         input_data[2] = 0.0 # msg.base_lin_vel_z
-        input_data[3] = msg.base_ang_vel_x
-        input_data[4] = msg.base_ang_vel_y
-        input_data[5] = msg.base_ang_vel_z
+        
 
         gyro = np.array([msg.base_ang_vel_x-0.00828264,
                      msg.base_ang_vel_y-0.00828264,
@@ -116,6 +117,7 @@ class NeuralNet(Node):
         R = self.quat_to_rotmat(self.q)
         g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
 
+        input_data[3:5] = gyro
         input_data[6:9] = g_proj
         # print(g_proj)
 
@@ -172,6 +174,8 @@ class NeuralNet(Node):
         input_data = [float(value) for value in input_data]
         # log input data
         # self.print_input(input_data)
+        # Publish the input data for debugging
+        self.publish_input(input_data)
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
         self.actions = output
         self.real_actions = []
@@ -187,6 +191,29 @@ class NeuralNet(Node):
         #     self.iteration_a += 1
         # Publish the actions
         self.publishall([self.real_actions[0:3], self.real_actions[3:6], self.real_actions[6:9], self.real_actions[9:12]])
+
+    def publish_input(self, input_data):
+        net_input_msg = NeuralInputComplete()
+        net_input_msg.base_lin_vel_x = input_data[0]
+        net_input_msg.base_lin_vel_y = input_data[1]
+        net_input_msg.base_lin_vel_z = input_data[2]
+        net_input_msg.base_ang_vel_x = input_data[3]
+        net_input_msg.base_ang_vel_y = input_data[4]
+        net_input_msg.base_ang_vel_z = input_data[5]
+        net_input_msg.projected_gravity_x = input_data[6]
+        net_input_msg.projected_gravity_y = input_data[7]
+        net_input_msg.projected_gravity_z = input_data[8]
+        net_input_msg.x_velocity = input_data[9]
+        net_input_msg.y_velocity = input_data[10]
+        net_input_msg.w_rate = input_data[11]
+
+        for i in range(12):
+            setattr(net_input_msg, f'joint_angle_{i}', input_data[12 + i])
+            setattr(net_input_msg, f'joint_velocity_{i}', input_data[24 + i])
+            setattr(net_input_msg, f'previous_action_{i}', input_data[36 + i])
+    
+
+        self.pub_net_input.publish(net_input_msg)
 
     def print_input(self, input_data):
         # Print every 50 iterations
