@@ -210,7 +210,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     /* Timer for when to send request of motor angle */
     timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     timer_ = create_wall_timer(
-        std::chrono::milliseconds(10),
+        std::chrono::milliseconds(20),
         std::bind(&RealInterface::control, this), timer_cb_group_
     );
 

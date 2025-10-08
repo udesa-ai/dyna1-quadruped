@@ -2,3 +2,13 @@
 software/Dyna_ws/src/.vscode/
 
 *.pyc
+
+software/Dyna_ws/data/
+
+software/Dyna_ws/rosbag2_2025_10_01-14_44_07/
+
+software/Dyna_ws/rosbag2_2025_10_01-14_53_06/
+
+software/Dyna_ws/rosbag2_2025_10_01-14_56_52/
+
+software/Dyna_ws/src/controler_cpp/src/.vscode/

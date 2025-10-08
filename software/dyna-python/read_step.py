@@ -31,8 +31,8 @@ plt.show()
 
 nico_values = np.array(nico_values)
 
-nico_time = np.arange(0, len(nico_values) * 0.01, 0.01)
-nico_time -= nico_time[499]
+nico_time = np.arange(0, len(nico_values) * 0.02, 0.02)
+nico_time -= nico_time[1233]
 
 # nico_time = np.arange(0, , 0.1)  # Example time array for Nico's data
 
@@ -73,7 +73,7 @@ plt.subplot(3, 1, 2)
 plt.plot(time_measured, fr_arm, label='Measured FRarm')
 plt.title('FRarm')
 plt.plot(log_time, log_requested['FRarm'], label='Requested FRarm')
-plt.plot(nico_time, nico_values*180/np.pi, label='Nico Position', linestyle='--')
+plt.plot(nico_time, nico_values*180/np.pi*2 - nico_values[1233]*180/np.pi*2, label='Nico Position', linestyle='--')
 plt.xlim(-1, max(max(log_time), max(time_measured)))
 plt.legend()
 
