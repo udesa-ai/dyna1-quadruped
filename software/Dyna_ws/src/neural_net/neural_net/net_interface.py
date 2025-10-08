@@ -95,9 +95,9 @@ class NeuralNet(Node):
 
     def listener_neural(self, msg):
         input_data = [0.0]*48
-        input_data[0] = 0.0 # msg.base_lin_vel_x
-        input_data[1] = 0.0 # msg.base_lin_vel_y
-        input_data[2] = 0.0 # msg.base_lin_vel_z
+        input_data[0] = msg.base_lin_vel_x
+        input_data[1] = msg.base_lin_vel_y
+        input_data[2] = msg.base_lin_vel_z
         
 
         gyro = np.array([msg.base_ang_vel_x-0.00828264,
