@@ -20,8 +20,8 @@ import gymnasium as gym
 from prettytable import PrettyTable
 
 # Import extensions to set up environment tasks
-import ext_template.tasks  # noqa: F401
-
+#import ext_template.tasks  # noqa: F401
+import DynabotIsaacTemplate.tasks  # noqa: F401
 
 def main():
     """Print all environments registered in `isaac.lab_demo` extension."""

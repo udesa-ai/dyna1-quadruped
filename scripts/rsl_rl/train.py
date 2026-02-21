@@ -41,6 +41,7 @@ sys.argv = [sys.argv[0]] + hydra_args
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
+sys.argv = [sys.argv[0]] + [arg for arg in hydra_args if not arg.startswith("--/")]
 
 """Rest everything follows."""
 
@@ -65,7 +66,7 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # Import extensions to set up environment tasks
-import ext_template.tasks  # noqa: F401
+import DynabotIsaacTemplate.tasks  # noqa: F401
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
