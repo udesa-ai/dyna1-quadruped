@@ -10,9 +10,13 @@ class AnymalDFlatEnvCfg(AnymalDRoughEnvCfg):
         super().__post_init__()
 
         # override rewards
-        self.rewards.flat_orientation_l2.weight = -1.0
+        self.rewards.flat_orientation_l2.weight = -0.36390231323872757
         self.rewards.dof_torques_l2.weight = 0 #-2.5e-5
         self.rewards.feet_air_time.weight = 0.4
+        self.rewards.feet_air_time.params["threshold"] = 0.22783556227609314
+        self.rewards.action_rate_l2.weight = -0.08350033980165854
+        self.rewards.joint_deviation.weight = -0.03735789059384906
+        self.rewards.ang_vel_xy_l2.weight = -0.0659719844413108
         # change terrain to flat
         self.scene.terrain.terrain_type = "plane"
         self.scene.terrain.terrain_generator = None
