@@ -62,15 +62,15 @@ class UARTBridge:
         if state is None and motor is None:
             for m in self.motors.values():
                 self.send_motor_state(m, 1)
-                time.sleep(0.1)
+                time.sleep(0.2)
                 self.send_motor_state(m, 0)
-                time.sleep(0.1)
+                time.sleep(0.2)
         else:
             state = 1 if state == 'on' else 0
             if motor is None:
                 for m in self.motors.values():
                     self.send_motor_state(m, state)
-                    time.sleep(0.1)
+                    time.sleep(0.2)
             else:
                 self.send_motor_state(self.motors[motor], state)
 

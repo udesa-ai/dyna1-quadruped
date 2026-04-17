@@ -41,6 +41,7 @@ try:
        i = 0
        while True:
               values = uart.read_uart()
+              print(values)
               motores.set_motor_encoders(values)
               motores.get_angle(pos)
               
