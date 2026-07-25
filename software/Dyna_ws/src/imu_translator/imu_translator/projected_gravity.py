@@ -17,7 +17,7 @@ class ProjectedGravityPublisher(Node):
         self.subscription = self.create_subscription(
             IMUdata, 'IMU', self.imu_callback, 10)
         self.publisher_ = self.create_publisher(
-            Vector3Stamped, 'projected_gravity_body', 10)
+            Vector3Stamped, '/imu/projected_gravity_body', 10)
 
         self.gravity_magnitude = 9.81
 

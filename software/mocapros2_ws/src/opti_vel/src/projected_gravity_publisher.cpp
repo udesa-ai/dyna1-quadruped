@@ -25,7 +25,7 @@ public:
       std::bind(&ProjectedGravityPublisher::topic_callback, this, _1));
 
     publisher_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "/projected_gravity_body", 10);
+      "/mocap/projected_gravity_body", 10);
 
     init_csv();
   }
