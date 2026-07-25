@@ -1,0 +1,14 @@
+/interface:
+  ros__parameters:
+    # IMU calibration offsets, subtracted from the raw sensor reading in imu_cb()
+    # before axis remapping / normalization.
+
+    # Accelerometer bias (g), raw sensor frame (x, y, z)
+    accel_offset_x: -0.0082099141
+    accel_offset_y: -0.0017630484 #0.9982369516 - 1
+    accel_offset_z: -0.0181648322
+
+    # Gyroscope bias (deg/s), raw sensor frame (x, y, z)
+    gyro_offset_x: 2.2930277053
+    gyro_offset_y: -0.8582327081
+    gyro_offset_z: 0.4831709816

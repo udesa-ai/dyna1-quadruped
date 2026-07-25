@@ -119,6 +119,20 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
 
     com_offset = (float) this->get_parameter("com_offset").as_double();
 
+    /* IMU calibration offsets, subtracted from the raw sensor reading in imu_cb() */
+    this->declare_parameter("accel_offset_x", 0.0f);
+    this->declare_parameter("accel_offset_y", 0.0f);
+    this->declare_parameter("accel_offset_z", 0.0f);
+    this->declare_parameter("gyro_offset_x", 0.0f);
+    this->declare_parameter("gyro_offset_y", 0.0f);
+    this->declare_parameter("gyro_offset_z", 0.0f);
+    accel_offset[0] = (float) this->get_parameter("accel_offset_x").as_double();
+    accel_offset[1] = (float) this->get_parameter("accel_offset_y").as_double();
+    accel_offset[2] = (float) this->get_parameter("accel_offset_z").as_double();
+    gyro_offset[0] = (float) this->get_parameter("gyro_offset_x").as_double();
+    gyro_offset[1] = (float) this->get_parameter("gyro_offset_y").as_double();
+    gyro_offset[2] = (float) this->get_parameter("gyro_offset_z").as_double();
+
     quadKine = QuadModel((float) this->get_parameter("shoulder_length").as_double(),
                          (float) this->get_parameter("elbow_length").as_double(),
                          (float) this->get_parameter("wrist_length").as_double(),
@@ -219,20 +233,29 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
 
 void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
 {
-    imu[0] = data->linear_acceleration.x;
-    imu[1] = data->linear_acceleration.y;
-    imu[2] = data->linear_acceleration.z;
-    imu[3] = data->angular_velocity.x;
-    imu[4] = data->angular_velocity.y;
-    imu[5] = data->angular_velocity.z;
+    /* Subtract calibration offsets from the raw sensor reading before any
+       axis remapping / normalization below. */
+    float accel_x = (float) data->linear_acceleration.x - accel_offset[0];
+    float accel_y = (float) data->linear_acceleration.y - accel_offset[1];
+    float accel_z = (float) data->linear_acceleration.z - accel_offset[2];
+    float gyro_x = (float) data->angular_velocity.x - gyro_offset[0];
+    float gyro_y = (float) data->angular_velocity.y - gyro_offset[1];
+    float gyro_z = (float) data->angular_velocity.z - gyro_offset[2];
 
-    base_ang_vel[0] = (data->angular_velocity.z/180)*M_PI; // Convert to rad/s
-    base_ang_vel[1] = (data->angular_velocity.x/180)*M_PI; // Convert to rad/s
-    base_ang_vel[2] = (data->angular_velocity.y/180)*M_PI; // Convert to rad/s
+    imu[0] = accel_x;
+    imu[1] = accel_y;
+    imu[2] = accel_z;
+    imu[3] = gyro_x;
+    imu[4] = gyro_y;
+    imu[5] = gyro_z;
 
-    float x = (float) -data->linear_acceleration.z;
-    float y = (float) -data->linear_acceleration.x;
-    float z = (float) -data->linear_acceleration.y;
+    base_ang_vel[0] = (gyro_z/180)*M_PI; // Convert to rad/s
+    base_ang_vel[1] = (gyro_x/180)*M_PI; // Convert to rad/s
+    base_ang_vel[2] = (gyro_y/180)*M_PI; // Convert to rad/s
+
+    float x = -accel_z;
+    float y = -accel_x;
+    float z = -accel_y;
     float normal = std::sqrt(x*x + y*y + z*z);
     projected_gravity[0] = x/normal;
     projected_gravity[1] = y/normal;

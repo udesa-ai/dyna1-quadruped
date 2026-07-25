@@ -104,6 +104,8 @@ private:
     float base_lin_vel[3] = { 0.0, 0.0, 0.0};
     float base_ang_vel[3] = { 0.0, 0.0, 0.0};
     float projected_gravity[3] = { 0.0, 0.0, 0.0};
+    float accel_offset[3] = { 0.0, 0.0, 0.0};
+    float gyro_offset[3] = { 0.0, 0.0, 0.0};
     float joint_offsets[3] = {0.0f, -0.79f, 1.5f};
 };
 

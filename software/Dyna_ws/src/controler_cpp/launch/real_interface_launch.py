@@ -25,6 +25,12 @@ def generate_launch_description():
         'config',
         'joy_params.yaml'
         )
+
+    config_imu = os.path.join(
+        get_package_share_directory('controler_cpp'),
+        'config',
+        'imu_params.yaml'
+        )
     
     control = Node(
             package='controler_cpp',
@@ -33,7 +39,7 @@ def generate_launch_description():
             name='interface',
             output="screen",
             emulate_tty=True,
-            parameters=[config_dyna, config_joycon, {"MAX_CURRENT" : MAX_CURRENT} ])
+            parameters=[config_dyna, config_joycon, {"MAX_CURRENT" : MAX_CURRENT}, config_imu])
     
     return launch.LaunchDescription([
         MAX_CURRENT_launch_arg,

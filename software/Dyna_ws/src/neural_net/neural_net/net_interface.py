@@ -100,9 +100,9 @@ class NeuralNet(Node):
         input_data[2] = msg.base_lin_vel_z
         
 
-        gyro = np.array([msg.base_ang_vel_x-0.00828264,
-                     msg.base_ang_vel_y-0.00828264,
-                     msg.base_ang_vel_z+0.01474347])
+        gyro = np.array([msg.base_ang_vel_x,
+                     msg.base_ang_vel_y,
+                     msg.base_ang_vel_z])
     
         # Accel in m/s^2 (normalize inside filter)
         accel = np.array([-msg.projected_gravity_x,
