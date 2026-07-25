@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'translator = imu_translator.imu:main',
+            'projected_gravity = imu_translator.projected_gravity:main',
         ],
     },
 )

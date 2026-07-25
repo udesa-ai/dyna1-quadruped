@@ -17,12 +17,14 @@ find_package(tf2_geometry_msgs REQUIRED)
 
 
 add_executable(velocity_publisher src/velocity_publisher.cpp)
-
+add_executable(projected_gravity_publisher src/projected_gravity_publisher.cpp)
 
 ament_target_dependencies(velocity_publisher rclcpp std_msgs geometry_msgs mocap4r2_msgs tf2 tf2_geometry_msgs)
+ament_target_dependencies(projected_gravity_publisher rclcpp std_msgs geometry_msgs mocap4r2_msgs tf2 tf2_geometry_msgs)
 
 install(TARGETS
   velocity_publisher
+  projected_gravity_publisher
   DESTINATION lib/${PROJECT_NAME}
 )
 
