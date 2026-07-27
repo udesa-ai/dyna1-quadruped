@@ -22,6 +22,8 @@ setup(
         'console_scripts': [
             'translator = imu_translator.imu:main',
             'projected_gravity = imu_translator.projected_gravity:main',
+            'filter_comparison = imu_translator.filter_comparison:main',
+            'filter_validation = imu_translator.filter_validation:main',
         ],
     },
 )
