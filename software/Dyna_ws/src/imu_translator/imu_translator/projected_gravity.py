@@ -9,6 +9,8 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
 
 class ProjectedGravityPublisher(Node):
 
@@ -23,13 +25,14 @@ class ProjectedGravityPublisher(Node):
 
         # CSV setup
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.csv_file = Path.home() / f"projected_gravity_{timestamp}.csv"
+        self.csv_file = DATA_DIR / f"projected_gravity_{timestamp}.csv"
         self.csv_file_handle = None
         self.csv_writer = None
         self._init_csv()
         self.get_logger().info(f"Saving projected gravity to: {self.csv_file}")
 
     def _init_csv(self):
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.csv_file_handle = open(self.csv_file, 'w', newline='')
         self.csv_writer = csv.writer(self.csv_file_handle)
         self.csv_writer.writerow(['timestamp', 'gravity_x', 'gravity_y', 'gravity_z'])

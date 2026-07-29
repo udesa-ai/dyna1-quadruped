@@ -4,10 +4,12 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <sys/stat.h>
 
 #include "rclcpp/rclcpp.hpp"
 #include "mocap4r2_msgs/msg/rigid_bodies.hpp"
 #include "geometry_msgs/msg/vector3_stamped.hpp"
+#include "geometry_msgs/msg/quaternion_stamped.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
@@ -27,6 +29,9 @@ public:
     publisher_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>(
       "/mocap/projected_gravity_body", 10);
 
+    publisher_orientation_ = this->create_publisher<geometry_msgs::msg::QuaternionStamped>(
+      "/mocap/orientation", 10);
+
     init_csv();
   }
 
@@ -40,6 +45,7 @@ public:
 private:
   rclcpp::Subscription<mocap4r2_msgs::msg::RigidBodies>::SharedPtr subscription_;
   rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr publisher_orientation_;
   std::ofstream csv_file_;
   std::string csv_filepath_;
 
@@ -54,11 +60,18 @@ private:
     ss << std::put_time(std::localtime(&time), "%Y%m%d_%H%M%S");
     std::string timestamp_str = ss.str();
 
-    csv_filepath_ = std::string(std::getenv("HOME")) + "/projected_gravity_mocap_" + timestamp_str + ".csv";
+    // Resolve the package's "data" directory from this source file's own
+    // location (.../opti_vel/src/projected_gravity_publisher.cpp -> .../opti_vel/data).
+    std::string source_file = __FILE__;
+    std::string package_root = source_file.substr(0, source_file.rfind("/src/"));
+    std::string data_dir = package_root + "/data";
+    mkdir(data_dir.c_str(), 0755);
+
+    csv_filepath_ = data_dir + "/projected_gravity_mocap_" + timestamp_str + ".csv";
     csv_file_.open(csv_filepath_, std::ios::out);
 
     if (csv_file_.is_open()) {
-      csv_file_ << "timestamp,gravity_x,gravity_y,gravity_z\n";
+      csv_file_ << "timestamp,gravity_x,gravity_y,gravity_z,qw,qx,qy,qz\n";
       csv_file_.flush();
       RCLCPP_INFO(this->get_logger(), "Saving projected gravity to: %s", csv_filepath_.c_str());
     } else {
@@ -95,6 +108,13 @@ private:
 
     publisher_->publish(projected_msg);
 
+    // Publish the full mocap orientation quaternion (world -> body)
+    geometry_msgs::msg::QuaternionStamped orientation_msg;
+    orientation_msg.header.stamp = msg->header.stamp;
+    orientation_msg.header.frame_id = msg->header.frame_id;
+    orientation_msg.quaternion = current_pose.orientation;
+    publisher_orientation_->publish(orientation_msg);
+
     // Save to CSV
     if (csv_file_.is_open()) {
       double timestamp = msg->header.stamp.sec + msg->header.stamp.nanosec / 1e9;
@@ -102,7 +122,11 @@ private:
                 << timestamp << ","
                 << gravity_body.x() << ","
                 << gravity_body.y() << ","
-                << gravity_body.z() << "\n";
+                << gravity_body.z() << ","
+                << current_pose.orientation.w << ","
+                << current_pose.orientation.x << ","
+                << current_pose.orientation.y << ","
+                << current_pose.orientation.z << "\n";
       csv_file_.flush();
     }
   }

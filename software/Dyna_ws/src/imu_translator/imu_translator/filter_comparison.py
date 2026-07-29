@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 import rclpy
 from rclpy.node import Node
+from joint_msgs.msg import NeuralInput
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import Vector3Stamped
+from geometry_msgs.msg import Vector3Stamped, QuaternionStamped
 from ahrs.filters import Madgwick
 import numpy as np
 import csv
@@ -13,6 +14,8 @@ import math
 import json
 import os
 
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
 
 class FilterComparison(Node):
     """Compare Madgwick vs Kalman filter for IMU orientation estimation"""
@@ -20,15 +23,26 @@ class FilterComparison(Node):
     def __init__(self):
         super().__init__('filter_comparison')
 
-        # Subscribe to raw IMU
+        # Subscribe to the corrected/remapped IMU data used by the neural net
         self.subscription = self.create_subscription(
-            Imu, 'imu', self.imu_callback, 10)
+            NeuralInput, 'network_input', self.imu_callback, 10)
+
+        # Raw IMU, only used to recover the accelerometer's real magnitude
+        # (network_input's projected_gravity is already normalized to a unit
+        # vector, so it can't be used for accel_norm below).
+        self.sub_raw_imu = self.create_subscription(
+            Imu, 'imu', self.raw_imu_cb, 10)
+        self.raw_accel = None
 
         # Publishers for both filters
         self.pub_madgwick = self.create_publisher(
             Vector3Stamped, 'gravity_madgwick', 10)
         self.pub_kalman = self.create_publisher(
             Vector3Stamped, 'gravity_kalman', 10)
+        self.pub_orientation_madgwick = self.create_publisher(
+            QuaternionStamped, 'orientation_madgwick', 10)
+        self.pub_orientation_kalman = self.create_publisher(
+            QuaternionStamped, 'orientation_kalman', 10)
 
         # Madgwick filter
         self.madgwick = Madgwick(sampleperiod=1/100)
@@ -40,6 +54,7 @@ class FilterComparison(Node):
         self.last_time = None
 
         # Kalman parameters
+        self.dt_ref = 1 / 100
         self.Q_kalman = np.eye(4) * 0.001  # Process noise (gyro drift)
         self.R_kalman = np.eye(3) * 0.1    # Measurement noise (accel)
         self.P_kalman_prev = self.P_kalman.copy()
@@ -61,13 +76,16 @@ class FilterComparison(Node):
 
         # CSV setup
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.csv_file = Path.home() / f"filter_comparison_{timestamp}.csv"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.csv_file = DATA_DIR / f"filter_comparison_{timestamp}.csv"
         self.csv_file_handle = open(self.csv_file, 'w', newline='')
         self.csv_writer = csv.writer(self.csv_file_handle)
         self.csv_writer.writerow([
             'timestamp',
             'gx', 'gy', 'gz',
             'ax', 'ay', 'az',
+            'madgwick_qw', 'madgwick_qx', 'madgwick_qy', 'madgwick_qz',
+            'kalman_qw', 'kalman_qx', 'kalman_qy', 'kalman_qz',
             'madgwick_roll_deg', 'madgwick_pitch_deg', 'madgwick_yaw_deg',
             'kalman_roll_deg', 'kalman_pitch_deg', 'kalman_yaw_deg',
             'kalman_converged', 'kalman_P_change', 'convergence_counter'
@@ -184,8 +202,8 @@ class FilterComparison(Node):
             # F ≈ I + dq/dq_prev * dt (state transition matrix)
             F = np.eye(4)  # Simplified: assume near-identity
 
-            # Predict covariance: P = F * P * F^T + Q
-            self.P_kalman = F @ self.P_kalman @ F.T + self.Q_kalman
+            # Predict covariance: P = F * P * F^T + Q, scaled to the real dt
+            self.P_kalman = F @ self.P_kalman @ F.T + self.Q_kalman * (dt / self.dt_ref)
 
             # Check for convergence
             self.check_convergence()
@@ -244,17 +262,29 @@ class FilterComparison(Node):
             w1*z2 + x1*y2 - y1*x2 + z1*w2
         ])
 
+    def raw_imu_cb(self, msg):
+        """Cache the latest raw accelerometer sample, axis-remapped like
+        imu_cb() in dyna_real_interface.cpp, but NOT normalized - this keeps
+        the real magnitude that projected_gravity throws away."""
+        ax = msg.linear_acceleration.x
+        ay = msg.linear_acceleration.y
+        az = msg.linear_acceleration.z
+        self.raw_accel = np.array([-az, -ax, -ay])
+
     def imu_callback(self, msg):
-        """Process raw IMU data with both filters"""
+        """Process the corrected/remapped IMU data (same signals net_interface.py
+        feeds its own Madgwick filter) with both filters"""
 
-        # Extract raw data
-        gyro = np.array([msg.angular_velocity.x,
-                        msg.angular_velocity.y,
-                        msg.angular_velocity.z])
+        if self.raw_accel is None:
+            return  # haven't received a raw /imu sample yet
 
-        accel = np.array([msg.linear_acceleration.x,
-                         msg.linear_acceleration.y,
-                         msg.linear_acceleration.z])
+        # base_ang_vel: already offset-corrected, body-frame, rad/s
+        gyro = np.array([msg.base_ang_vel_x,
+                        msg.base_ang_vel_y,
+                        msg.base_ang_vel_z])
+
+        # Raw accelerometer, remapped to body frame (see raw_imu_cb), magnitude preserved
+        accel = self.raw_accel
 
         # Calculate dt for Kalman
         current_time = self.get_clock().now()
@@ -264,8 +294,9 @@ class FilterComparison(Node):
             dt = 0.01  # Default 10ms
         self.last_time = current_time
 
-        # Update Madgwick
-        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel)
+        # Update Madgwick (explicit dt: network_input arrives at ~50Hz, not the
+        # 100Hz assumed by the sampleperiod passed to the Madgwick constructor)
+        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel, dt=dt)
 
         # Update Kalman: Predict + Update
         self.kalman_predict(gyro, dt)
@@ -287,8 +318,9 @@ class FilterComparison(Node):
         gravity_madgwick = self.project_gravity(self.q_madgwick)
         gravity_kalman = self.project_gravity(self.q_kalman)
 
-        # Get timestamp
-        timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
+        # NeuralInput has no header, so use reception time as its timestamp
+        stamp = current_time.to_msg()
+        timestamp = current_time.nanoseconds / 1e9
 
         # Calculate P change for convergence monitoring
         P_change = np.linalg.norm(self.P_kalman - self.P_kalman_prev) if hasattr(self, 'P_kalman_prev') else 0.0
@@ -298,6 +330,10 @@ class FilterComparison(Node):
             f"{timestamp:.6f}",
             f"{gyro[0]:.6f}", f"{gyro[1]:.6f}", f"{gyro[2]:.6f}",
             f"{accel[0]:.6f}", f"{accel[1]:.6f}", f"{accel[2]:.6f}",
+            f"{self.q_madgwick[0]:.6f}", f"{self.q_madgwick[1]:.6f}",
+            f"{self.q_madgwick[2]:.6f}", f"{self.q_madgwick[3]:.6f}",
+            f"{self.q_kalman[0]:.6f}", f"{self.q_kalman[1]:.6f}",
+            f"{self.q_kalman[2]:.6f}", f"{self.q_kalman[3]:.6f}",
             f"{madgwick_roll_deg:.6f}", f"{madgwick_pitch_deg:.6f}", f"{madgwick_yaw_deg:.6f}",
             f"{kalman_roll_deg:.6f}", f"{kalman_pitch_deg:.6f}", f"{kalman_yaw_deg:.6f}",
             f"{int(self.kalman_converged)}", f"{P_change:.9f}", f"{self.convergence_counter}"
@@ -306,7 +342,7 @@ class FilterComparison(Node):
 
         # Publish Madgwick result (still gravity for downstream compatibility)
         msg_madgwick = Vector3Stamped()
-        msg_madgwick.header = msg.header
+        msg_madgwick.header.stamp = stamp
         msg_madgwick.header.frame_id = "body"
         msg_madgwick.vector.x = gravity_madgwick[0]
         msg_madgwick.vector.y = gravity_madgwick[1]
@@ -315,12 +351,31 @@ class FilterComparison(Node):
 
         # Publish Kalman result (still gravity for downstream compatibility)
         msg_kalman = Vector3Stamped()
-        msg_kalman.header = msg.header
+        msg_kalman.header.stamp = stamp
         msg_kalman.header.frame_id = "body"
         msg_kalman.vector.x = gravity_kalman[0]
         msg_kalman.vector.y = gravity_kalman[1]
         msg_kalman.vector.z = gravity_kalman[2]
         self.pub_kalman.publish(msg_kalman)
+
+        # Publish full orientation quaternions
+        orientation_madgwick = QuaternionStamped()
+        orientation_madgwick.header.stamp = stamp
+        orientation_madgwick.header.frame_id = "body"
+        orientation_madgwick.quaternion.w = self.q_madgwick[0]
+        orientation_madgwick.quaternion.x = self.q_madgwick[1]
+        orientation_madgwick.quaternion.y = self.q_madgwick[2]
+        orientation_madgwick.quaternion.z = self.q_madgwick[3]
+        self.pub_orientation_madgwick.publish(orientation_madgwick)
+
+        orientation_kalman = QuaternionStamped()
+        orientation_kalman.header.stamp = stamp
+        orientation_kalman.header.frame_id = "body"
+        orientation_kalman.quaternion.w = self.q_kalman[0]
+        orientation_kalman.quaternion.x = self.q_kalman[1]
+        orientation_kalman.quaternion.y = self.q_kalman[2]
+        orientation_kalman.quaternion.z = self.q_kalman[3]
+        self.pub_orientation_kalman.publish(orientation_kalman)
 
     def __del__(self):
         if self.csv_file_handle and not self.csv_file_handle.closed:
