@@ -54,7 +54,7 @@ private:
       double dy = current_pose.position.y - prev_pose_.position.y;
       double dz = current_pose.position.z - prev_pose_.position.z;
 
-      dt = 0.01;
+      //dt = 0.01;
       // Velocity in world frame
       tf2::Vector3 vel_world(dx / dt, dy / dt, dz / dt);
 

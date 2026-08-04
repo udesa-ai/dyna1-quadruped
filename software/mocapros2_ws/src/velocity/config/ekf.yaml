@@ -1,0 +1,45 @@
+ekf_filter_node:
+  ros__parameters:
+    frequency: 120.0
+    two_d_mode: false
+    publish_tf: true
+    
+    # NEW: Project the delayed mocap pose forward to 'now()' to kill visual lag
+    predict_to_current_time: true
+    
+    # Frames
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: dyna_base_link
+    world_frame: map
+
+    # Topic to listen to
+    pose0: /dyna/mocap_pose
+    
+    pose0_config: [true,  true,  true,
+                   true,  true,  true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+
+    # Spike Filter
+    pose0_rejection_threshold: 3.0
+
+    # "The Capacitor": 
+    # - Rows 1-6 (Pos/Orient): Increased to 10.0 to trust raw mocap more.
+    # - Rows 7-12 (Velocities): Increased to 10.0 so the internal model doesn't resist sudden movements.
+    process_noise_covariance: [10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0,  0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  10.0, 0.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0, 0.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 1.0, 0.0,
+                               0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, 0.0, 1.0]
