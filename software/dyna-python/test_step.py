@@ -258,7 +258,7 @@ plt.title('FRfoot Current')
 
 plt.show()
 
-csv_filename = 'data/log_step_curve.csv'
+csv_filename = f'data/log_step_curve_{choice}.csv'
 max_len = max(len(log_time), len(time_measured))
 with open(csv_filename, mode='w', newline='') as f:
     writer = csv.writer(f)

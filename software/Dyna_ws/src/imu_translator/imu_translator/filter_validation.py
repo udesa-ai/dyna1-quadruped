@@ -9,7 +9,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
 
 
 class FilterValidation(Node):
@@ -141,7 +141,7 @@ class FilterValidation(Node):
                      self.madgwick_data['timestamp'],
                      self.imu_data['timestamp'],
                      self.mocap_vel_data['timestamp']]
-        if max(timestamps) - min(timestamps) > 0.1:
+        if max(timestamps) - min(timestamps) > 0.2:
             return  # Data too far apart
 
         # Extract orientation quaternions (w, x, y, z)

@@ -225,7 +225,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     timer_ = create_wall_timer(
         std::chrono::milliseconds(20),
-        std::bind(&RealInterface::control, this), timer_cb_group_
+        std::bind(&RealInterface::control2, this), timer_cb_group_
     );
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"READY TO GO!");
@@ -256,10 +256,15 @@ void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
     float x = -accel_z;
     float y = -accel_x;
     float z = -accel_y;
-    float normal = std::sqrt(x*x + y*y + z*z);
-    projected_gravity[0] = x/normal;
-    projected_gravity[1] = y/normal;
-    projected_gravity[2] = z/normal;
+    
+    projected_gravity[0] = x;
+    projected_gravity[1] = y;
+    projected_gravity[2] = z;
+
+    if (!readflag_data){
+        readflag_data = true;
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Uart data received for the first time, configuration can start");
+    }
 }
 
 void RealInterface::vel_cb(const geometry_msgs::msg::Twist::SharedPtr data)
@@ -301,10 +306,6 @@ void RealInterface::update_data(joint_msgs::msg::OdriveData::SharedPtr data)
                       data->currents.frshoulder, data->currents.frarm, data->currents.frfoot,
                       data->currents.blshoulder, data->currents.blarm, data->currents.blfoot,
                       data->currents.brshoulder, data->currents.brarm, data->currents.brfoot;
-
-    if (!readflag_data){
-        readflag_data = true;
-    }
 }
 
 void RealInterface::cmd_cb(joint_msgs::msg::MiniCmd::SharedPtr data)
@@ -422,12 +423,13 @@ void RealInterface::control(){
     if (ERROR_STATE == 0)
     {
         if (!config_done) {
-            if (!current_set) {
-                set_current(MAX_CURRENT);
-                current_set = true;
-            }
-            if (readflag_data && current_set) {
-                config_done = true;
+            // Only proceed if we have received at least one data packet from UART
+            if (readflag_data) { 
+                if (!current_set) {
+                    set_current(MAX_CURRENT);
+                    current_set = true;
+                }
+                config_done = true; // Setup is complete
             }
         } else if (start_movement) {
             rclcpp::Time tnow;
@@ -490,6 +492,11 @@ void RealInterface::control(){
     
     
 }
+
+void RealInterface::control2(){
+    move_nn();
+}
+
 
 MatrixJoint RealInterface::get_xyz()
 {

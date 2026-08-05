@@ -29,6 +29,7 @@ public:
     void jb_cb(teleop_msgs::msg::JoyButtons::SharedPtr data);
     void set_current(uint8_t max_current);
     void control();
+    void control2();
     MatrixJoint get_xyz();
     void move();
     void move_nn();

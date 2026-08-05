@@ -5,7 +5,7 @@
       motor0:
         motorN: 0
         axisID: 0
-        iOffset: -0.6963085824251176
+        iOffset: 0.3005001401901244
         direction: -1
         calibration_angle: 35.6
         joint_limit_min: -30.0
@@ -13,7 +13,7 @@
       motor1:
         motorN: 0
         axisID: 1
-        iOffset: 0.9263124322891236
+        iOffset: 1.564062506556511
         direction: -1
         calibration_angle: -71.9
         joint_limit_min: -60.0
@@ -21,7 +21,7 @@
       motor2:
         motorN: 1
         axisID: 2
-        iOffset: -3.606808577775955
+        iOffset: -3.3035588014125823
         direction: -1
         calibration_angle: 150.2
         joint_limit_min: 0.0
@@ -31,7 +31,7 @@
       motor0:
         motorN: 1
         axisID: 3
-        iOffset: 0.036562457084655886
+        iOffset: 0.04181249380111707
         direction: -1
         calibration_angle: -35.6
         joint_limit_min: -30.0
@@ -39,7 +39,7 @@
       motor1:
         motorN: 0
         axisID: 4
-        iOffset: 1.5239999747276307
+        iOffset: 1.2816874837875367
         direction: 1
         calibration_angle: -71.9
         joint_limit_min: -60.0
@@ -47,7 +47,7 @@
       motor2:
         motorN: 1
         axisID: 5
-        iOffset: -3.6276913928985595
+        iOffset: -3.1895001578330993
         direction: 1
         calibration_angle: 150.2
         joint_limit_min: 0.0
@@ -57,7 +57,7 @@
       motor0:
         motorN: 0
         axisID: 6
-        iOffset: -0.0540001845359801
+        iOffset: -1.1245001411437987
         direction: 1
         calibration_angle: -35.6
         joint_limit_min: -30.0
@@ -65,7 +65,7 @@
       motor1:
         motorN: 0
         axisID: 7
-        iOffset: 1.2423086166381836
+        iOffset: 1.251187801361084
         direction: 1
         calibration_angle: 0.0
         joint_limit_min: -90.0
@@ -73,7 +73,7 @@
       motor2:
         motorN: 1
         axisID: 8
-        iOffset: -4.180562496185303
+        iOffset: -4.055312514305115
         direction: 1
         calibration_angle: 125.0
         joint_limit_min: 0.0
@@ -83,7 +83,7 @@
       motor0:
         motorN: 1
         axisID: 9
-        iOffset: -0.04669149160385144
+        iOffset: 1.0911877012252806
         direction: 1
         calibration_angle: 35.6
         joint_limit_min: -30.0
@@ -91,7 +91,7 @@
       motor1:
         motorN: 0
         axisID: 10
-        iOffset: 0.9440624713897705
+        iOffset: 1.5096913576126099
         direction: -1
         calibration_angle: 0.0
         joint_limit_min: -90.0
@@ -99,7 +99,7 @@
       motor2:
         motorN: 1
         axisID: 11
-        iOffset: -3.3376877456903458
+        iOffset: -3.651058614253998
         direction: -1
         calibration_angle: 125.0
         joint_limit_min: 0.0

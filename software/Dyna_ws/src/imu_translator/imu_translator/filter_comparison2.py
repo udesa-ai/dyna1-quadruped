@@ -14,8 +14,7 @@ import math
 import json
 import os
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-
+DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
 
 class FilterComparison(Node):
     """Compare Madgwick vs Kalman filter for IMU orientation estimation"""
@@ -308,7 +307,7 @@ class FilterComparison(Node):
 
         # Update Madgwick (explicit dt: network_input arrives at ~50Hz, not the
         # 100Hz assumed by the sampleperiod passed to the Madgwick constructor)
-        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel_corrected, dt=dt)
+        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel_corrected)
 
         # Update Kalman: Predict + Update
         self.kalman_predict(gyro, dt)

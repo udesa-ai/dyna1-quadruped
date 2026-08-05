@@ -311,6 +311,7 @@ private:
         payload.insert(payload.end(), bytes, bytes + sizeof(float));
 
         uart_write_callback(payload, topic_id);  // Send the payload
+        RCLCPP_INFO(this->get_logger(), "Max current request sent");
     }
 
     void request_reboot(const joint_msgs::msg::JointsBool::SharedPtr msg){
