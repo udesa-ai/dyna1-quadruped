@@ -141,7 +141,7 @@ class FilterValidation(Node):
                      self.madgwick_data['timestamp'],
                      self.imu_data['timestamp'],
                      self.mocap_vel_data['timestamp']]
-        if max(timestamps) - min(timestamps) > 0.2:
+        if max(timestamps) - min(timestamps) > 1.0:
             return  # Data too far apart
 
         # Extract orientation quaternions (w, x, y, z)

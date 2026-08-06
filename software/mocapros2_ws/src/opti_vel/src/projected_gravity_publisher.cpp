@@ -30,7 +30,7 @@ public:
       "/mocap/projected_gravity_body", 10);
 
     publisher_orientation_ = this->create_publisher<geometry_msgs::msg::QuaternionStamped>(
-      "/mocap/orientation", 10);
+      "/mocap/orientation", 1);
 
     init_csv();
   }
