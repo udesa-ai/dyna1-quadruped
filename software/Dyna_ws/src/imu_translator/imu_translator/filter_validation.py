@@ -28,7 +28,7 @@ class FilterValidation(Node):
         self.sub_imu = self.create_subscription(
             Imu, 'imu', self.imu_cb, 10)
         self.sub_mocap_vel = self.create_subscription(
-            Twist, '/rigid_body_velocity', self.mocap_vel_cb, 10)
+            Twist, '/rigid_body_velocity_filter', self.mocap_vel_cb, 10)
 
         # Gyro calibration offsets (deg/s, raw sensor frame), same as imu_cb()
         # in dyna_real_interface.cpp, so base_ang_vel here matches what would
@@ -141,7 +141,7 @@ class FilterValidation(Node):
                      self.madgwick_data['timestamp'],
                      self.imu_data['timestamp'],
                      self.mocap_vel_data['timestamp']]
-        if max(timestamps) - min(timestamps) > 1.0:
+        if max(timestamps) - min(timestamps) > 0.1:
             return  # Data too far apart
 
         # Extract orientation quaternions (w, x, y, z)
