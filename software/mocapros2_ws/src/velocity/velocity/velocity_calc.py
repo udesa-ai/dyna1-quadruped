@@ -9,8 +9,9 @@ and publishes:
                                             (same topic + type as opti_vel's
                                             velocity_publisher, drop-in replacement)
 
-Linear velocity:  v_body  = R(q)ᵀ · (Δpos / Δt)
-Angular velocity: ω_body  = 2 · (q_prev* ⊗ q̇)  [vector part only]
+Linear velocity:  v_body  = R(q)ᵀ · (Δpos / Δt), Kalman-filtered per axis.
+Angular velocity: q_Δ = q_prev⁻¹ ⊗ q_curr → rotation vector → /Δt → ω_body,
+                  then a first-order low-pass filter per axis.
 
 Both are expressed in the rigid-body (robot) frame.
 
@@ -19,6 +20,7 @@ Parameters (set via ROS2 params or command-line --ros-args -p key:=value):
   kf_pos_noise     (float, default 1e-4)   process noise for position states
   kf_vel_noise     (float, default 1e-2)   process noise for velocity states
   kf_meas_noise    (float, default 1e-6)   measurement noise (OptiTrack ~0.1 mm)
+  ang_lpf_cutoff_hz(float, default 5.0)    angular velocity low-pass cutoff (Hz)
   max_dt           (float, default 0.5)    skip update if gap > this (seconds)
 
 Usage:
@@ -64,21 +66,65 @@ def quat_multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     ])
 
 
+def quat_to_rotvec(q: np.ndarray) -> np.ndarray:
+    """
+    Convert quaternion [x,y,z,w] to its rotation vector (axis * angle).
+    angle = 2·atan2(|v|, w) always comes out in [0, π] since |v| ≥ 0, so
+    this is automatically the shortest-path rotation - no branch/wrap
+    discontinuity like Euler angles have at ±π.
+    """
+    v = q[:3]
+    w = q[3]
+    vnorm = np.linalg.norm(v)
+    if vnorm < 1e-12:
+        return 2.0 * v          # small-angle: angle ≈ 2·vnorm, axis ≈ v/vnorm
+    angle = 2.0 * np.arctan2(vnorm, w)
+    return (angle / vnorm) * v
+
+
 def angular_velocity_body(q_prev: np.ndarray,
                            q_curr: np.ndarray,
                            dt: float) -> np.ndarray:
     """
-    Angular velocity in body frame via quaternion derivative.
-      q̇  ≈ (q_curr − q_prev) / dt
-      ω_body = 2 · (q_prev* ⊗ q̇).xyz
+    Angular velocity in body frame via the relative-rotation method:
+      q_Δ    = q_prev⁻¹ ⊗ q_curr   (rotation from k-1 to k, expressed in
+                                     the q_prev/body frame)
+      ω_body = rotvec(q_Δ) / dt
+    Exact for a constant-rate rotation over [k-1, k], unlike differentiating
+    q directly (q̇ ≈ Δq/dt), which is only a first-order approximation and
+    is prone to cancellation error when q_curr ≈ q_prev.
     """
-    q_dot = (q_curr - q_prev) / dt
-    omega_quat = quat_multiply(quat_conjugate(q_prev), q_dot)
-    return 2.0 * omega_quat[:3]   # discard scalar part
+    q_delta = quat_multiply(quat_conjugate(q_prev), q_curr)
+    return quat_to_rotvec(q_delta) / dt
+
+
+class LowPassFilter:
+    """First-order (RC) low-pass filter, one per axis.
+    cutoff_hz has direct physical meaning: signal content changing faster
+    than cutoff_hz is attenuated, content slower passes through - so it's
+    set from how fast real body rotations of interest are, not from an
+    abstract noise/process-noise ratio like the Kalman filter needed.
+    """
+    def __init__(self, cutoff_hz: float):
+        self.rc = 1.0 / (2.0 * np.pi * cutoff_hz)
+        self.y = None
+
+    def reset(self):
+        """Drop the held state so the next sample is taken as-is instead
+        of being blended with a value from before a tracking gap."""
+        self.y = None
+
+    def filter(self, x: float, dt: float) -> float:
+        if self.y is None:
+            self.y = x
+            return self.y
+        alpha = dt / (self.rc + dt)
+        self.y = self.y + alpha * (x - self.y)
+        return self.y
 
 
 # ─────────────────────────────────────────────────────────────────
-#  Per-axis constant-velocity Kalman filter
+#  Per-axis constant-velocity Kalman filter (used for linear velocity)
 #  State:       [position, velocity]
 #  Measurement: [position]
 # ─────────────────────────────────────────────────────────────────
@@ -130,21 +176,25 @@ class OptiTrackVelocityNode(Node):
         self.declare_parameter("kf_pos_noise",  1e-4)
         self.declare_parameter("kf_vel_noise",  1e-2)
         self.declare_parameter("kf_meas_noise", 1e-6)
+        self.declare_parameter("ang_lpf_cutoff_hz", 5.0)
         self.declare_parameter("max_dt",        0.5)
 
         self.target_name = self.get_parameter("rigid_body_name").value
         pos_noise     = self.get_parameter("kf_pos_noise").value
         vel_noise     = self.get_parameter("kf_vel_noise").value
         meas_noise    = self.get_parameter("kf_meas_noise").value
+        ang_cutoff_hz = self.get_parameter("ang_lpf_cutoff_hz").value
         self.max_dt   = self.get_parameter("max_dt").value
 
         # ── Kalman filters: one per translational axis (x, y, z) ─
         self.kf = [AxisKF(pos_noise, vel_noise, meas_noise) for _ in range(3)]
 
-        # ── Kalman filters for angular velocity (body frame axes) ─
-        # We filter ω directly after computing it from quaternions
-        self.kf_ang = [AxisKF(pos_noise, vel_noise * 5.0, meas_noise * 100.0)
-                       for _ in range(3)]
+        # ── Low-pass filters for angular velocity (body frame axes) ─
+        # ang_lpf_cutoff_hz has direct physical meaning (Hz) instead of an
+        # abstract noise ratio, and - unlike the Kalman filter previously
+        # used here - has no internal covariance state that can grow
+        # unbounded and let a spike back through after a run of rejections.
+        self.lpf_ang = [LowPassFilter(ang_cutoff_hz) for _ in range(3)]
 
         # ── State memory ─────────────────────────────────────────
         self.prev_pos  = None   # np.ndarray [3]
@@ -156,7 +206,7 @@ class OptiTrackVelocityNode(Node):
         self.pub_raw = self.create_publisher(TwistStamped,
                                              "velocity/raw", qos)
         self.pub_filt = self.create_publisher(Twist,
-                                              "/rigid_body_velocity", qos)
+                                              "/rigid_body_velocity_filter", qos)
 
         # ── Subscriber ───────────────────────────────────────────
         self.sub = self.create_subscription(RigidBodies, 'rigid_bodies',
@@ -166,7 +216,8 @@ class OptiTrackVelocityNode(Node):
         self.get_logger().info(
             f"Listening on rigid_bodies for '{self.target_name}'\n"
             f"  KF noise – pos: {pos_noise}, vel: {vel_noise}, "
-            f"meas: {meas_noise}"
+            f"meas: {meas_noise}\n"
+            f"  angular LPF cutoff: {ang_cutoff_hz} Hz"
         )
 
     # ──────────────────────────────────────────────────────────────
@@ -186,6 +237,15 @@ class OptiTrackVelocityNode(Node):
 
         # Normalise quaternion (OptiTrack is already normalised, but be safe)
         curr_quat /= np.linalg.norm(curr_quat)
+
+        # Quaternions have double cover (q and -q are the same rotation).
+        # OptiTrack can flip sign between consecutive frames, which turns
+        # (q_curr - q_prev) into ~2*q instead of a small delta - spiking
+        # the finite-difference angular velocity to ~2/dt (~100 rad/s at
+        # OptiTrack framerates) even while stationary. Force continuity
+        # with the previous quaternion before differentiating.
+        if self.prev_quat is not None and np.dot(curr_quat, self.prev_quat) < 0.0:
+            curr_quat = -curr_quat
 
         stamp  = msg.header.stamp
         t_curr = stamp.sec + stamp.nanosec * 1e-9
@@ -209,6 +269,10 @@ class OptiTrackVelocityNode(Node):
             self.prev_pos  = curr_pos
             self.prev_quat = curr_quat
             self.prev_time = t_curr
+
+            for lpf in self.lpf_ang:
+                lpf.reset()
+
             return
 
         # ─────────────────────────────────────────────────────────
@@ -243,15 +307,10 @@ class OptiTrackVelocityNode(Node):
 
         lin_vel_body_filt = R.T @ filtered_vel_g       # → robot frame
 
-        # Angular velocity: filter ω directly in body frame.
-        # ang_vel_body_raw[i] is fed in as the KF's "position" measurement,
-        # so the filtered *position* state (fp) is the smoothed angular
-        # velocity - the "velocity" state (fv) would be its derivative
-        # (angular acceleration), not what we want here.
+        # Angular velocity: low-pass filter ω directly in body frame.
         ang_vel_body_filt = np.zeros(3)
-        for i, kf_a in enumerate(self.kf_ang):
-            fp, _ = kf_a.predict_and_update(ang_vel_body_raw[i], dt)
-            ang_vel_body_filt[i] = fp
+        for i, lpf in enumerate(self.lpf_ang):
+            ang_vel_body_filt[i] = lpf.filter(ang_vel_body_raw[i], dt)
 
         # ─────────────────────────────────────────────────────────
         #  Publish
