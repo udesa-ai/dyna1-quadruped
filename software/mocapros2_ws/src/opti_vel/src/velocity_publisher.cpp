@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <string>
@@ -12,6 +13,46 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 
 using std::placeholders::_1;
+
+// Angular velocity in body frame via the relative-rotation method:
+//   q_delta = q_prev^-1 * q_curr   (rotation from k-1 to k, expressed in
+//                                    the q_prev/body frame)
+//   omega_body = rotvec(q_delta) / dt
+// Exact for a constant-rate rotation over [k-1, k]; unlike differencing
+// roll/pitch/yaw, it has no wraparound at +-180 deg and no gimbal lock.
+tf2::Vector3 angularVelocityBody(const tf2::Quaternion & q_prev_in,
+                                  const tf2::Quaternion & q_curr_in,
+                                  double dt)
+{
+  tf2::Quaternion q_prev = q_prev_in;
+  tf2::Quaternion q_curr = q_curr_in;
+
+  // q and -q are the same orientation; force continuity with q_prev so
+  // the relative rotation below comes out small instead of near-180 deg.
+  if (q_prev.dot(q_curr) < 0.0) {
+    q_curr = tf2::Quaternion(-q_curr.x(), -q_curr.y(), -q_curr.z(), -q_curr.w());
+  }
+
+  tf2::Quaternion q_delta = q_prev.inverse() * q_curr;
+
+  double x = q_delta.x();
+  double y = q_delta.y();
+  double z = q_delta.z();
+  double w = q_delta.w();
+  double vnorm = std::sqrt(x * x + y * y + z * z);
+
+  tf2::Vector3 rotvec;
+  if (vnorm < 1e-12) {
+    // small-angle: angle ~= 2*vnorm, axis ~= (x,y,z)/vnorm -> product ~= 2*(x,y,z)
+    rotvec = tf2::Vector3(2.0 * x, 2.0 * y, 2.0 * z);
+  } else {
+    double angle = 2.0 * std::atan2(vnorm, w);   // in [0, pi]: shortest path
+    double scale = angle / vnorm;
+    rotvec = tf2::Vector3(x * scale, y * scale, z * scale);
+  }
+
+  return rotvec / dt;
+}
 
 class VelocityPublisher : public rclcpp::Node
 {
@@ -74,22 +115,12 @@ private:
       twist.linear.y = vel_body.y();
       twist.linear.z = vel_body.z();
 
-      // Angular velocity: estimate RPY delta over time
+      // Angular velocity: relative-rotation method (see angularVelocityBody)
       tf2::Quaternion q_prev, q_curr;
       tf2::fromMsg(prev_pose_.orientation, q_prev);
       tf2::fromMsg(current_pose.orientation, q_curr);
 
-      tf2::Matrix3x3 m1(q_prev), m2(q_curr);
-      double roll1, pitch1, yaw1, roll2, pitch2, yaw2;
-      m1.getRPY(roll1, pitch1, yaw1);
-      m2.getRPY(roll2, pitch2, yaw2);
-
-      double droll = (roll2 - roll1) / dt;
-      double dpitch = (pitch2 - pitch1) / dt;
-      double dyaw = (yaw2 - yaw1) / dt;
-
-      tf2::Vector3 ang_vel_world(droll, dpitch, dyaw);
-      tf2::Vector3 ang_vel_body = rot_matrix.transpose() * ang_vel_world;
+      tf2::Vector3 ang_vel_body = angularVelocityBody(q_prev, q_curr, dt);
 
       twist.angular.x = ang_vel_body.x();
       twist.angular.y = ang_vel_body.y();

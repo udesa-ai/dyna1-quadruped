@@ -27,7 +27,7 @@ public:
       std::bind(&ProjectedGravityPublisher::topic_callback, this, _1));
 
     publisher_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "/mocap/projected_gravity_body", 10);
+      "/mocap/projected_gravity_body", 1);
 
     publisher_orientation_ = this->create_publisher<geometry_msgs::msg::QuaternionStamped>(
       "/mocap/orientation", 1);

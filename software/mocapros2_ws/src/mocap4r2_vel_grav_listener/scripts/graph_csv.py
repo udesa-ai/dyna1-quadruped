@@ -11,6 +11,8 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 VARIABLES = [
     'lin_vel_x', 'lin_vel_y', 'lin_vel_z',
     'ang_vel_x', 'ang_vel_y', 'ang_vel_z',
+    'lin_vel_fil_x', 'lin_vel_fil_y', 'lin_vel_fil_z',
+    'ang_vel_fil_x', 'ang_vel_fil_y', 'ang_vel_fil_z',
     'gravity_x', 'gravity_y', 'gravity_z',
 ]
 
