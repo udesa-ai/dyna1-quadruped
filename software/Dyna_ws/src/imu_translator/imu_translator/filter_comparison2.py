@@ -54,7 +54,7 @@ class FilterComparison(Node):
         self.last_robot_accel = np.array([0.0, 0.0, 0.0])  # Extracted robot acceleration
 
         # IMU offset from center of mass [m] (x, y, z)
-        self.imu_offset = np.array([0.5, 0.0, 0.0])
+        self.imu_offset = np.array([0.27, 0.0, 0.0])
 
         # Kalman parameters
         self.dt_ref = 1 / 100
