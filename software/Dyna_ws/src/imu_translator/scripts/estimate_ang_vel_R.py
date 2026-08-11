@@ -27,7 +27,7 @@ import pandas as pd
 
 DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
 SAVE_DIR = DATA_DIR / "rotation"
-PATH_CSV = DATA_DIR / "filter_validation_20260807_150343.csv" #"filter_validation_20260807_150721.csv"
+PATH_CSV = DATA_DIR / "filter_validation_20260811_130207.csv" #"filter_validation_20260807_150721.csv"
 REQUIRED_COLUMNS = ["imu_wx", "imu_wy", "imu_wz", "mocap_wx", "mocap_wy", "mocap_wz"]
 
 

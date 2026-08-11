@@ -60,7 +60,7 @@ import pandas as pd
 
 DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
 SAVE_DIR = DATA_DIR / "rotation"
-PATH_CSV = DATA_DIR / "filter_validation_20260807_150343.csv" #"filter_validation_20260807_150721.csv"
+PATH_CSV = DATA_DIR / "filter_validation_20260811_130207.csv" #"filter_validation_20260807_150721.csv"
 
 GRAVITY = 9.81
 G_WORLD = np.array([0.0, 0.0, -GRAVITY])
