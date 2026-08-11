@@ -30,18 +30,18 @@ class FilterComparison(Node):
         # (network_input's projected_gravity is already normalized to a unit
         # vector, so it can't be used for accel_norm below).
         self.sub_raw_imu = self.create_subscription(
-            Imu, 'imu', self.raw_imu_cb, 10)
+            Imu, 'imu', self.raw_imu_cb, 1)
         self.raw_accel = None
 
         # Publishers for both filters
         self.pub_madgwick = self.create_publisher(
-            Vector3Stamped, 'gravity_madgwick', 10)
+            Vector3Stamped, 'gravity_madgwick', 1)
         self.pub_kalman = self.create_publisher(
-            Vector3Stamped, 'gravity_kalman', 10)
+            Vector3Stamped, 'gravity_kalman', 1)
         self.pub_orientation_madgwick = self.create_publisher(
-            QuaternionStamped, 'orientation_madgwick', 10)
+            QuaternionStamped, 'orientation_madgwick', 1)
         self.pub_orientation_kalman = self.create_publisher(
-            QuaternionStamped, 'orientation_kalman', 10)
+            QuaternionStamped, 'orientation_kalman', 1)
 
         # Madgwick filter
         self.madgwick = Madgwick(sampleperiod=1/100)

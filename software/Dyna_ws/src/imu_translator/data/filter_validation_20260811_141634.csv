@@ -1,0 +1,1 @@
+timestamp,gx,gy,gz,ax,ay,az,imu_wx,imu_wy,imu_wz,mocap_wx,mocap_wy,mocap_wz,mocap_qw,mocap_qx,mocap_qy,mocap_qz,kalman_qw,kalman_qx,kalman_qy,kalman_qz,madgwick_qw,madgwick_qx,madgwick_qy,madgwick_qz

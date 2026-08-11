@@ -20,15 +20,15 @@ class FilterValidation(Node):
 
         # Subscribers
         self.sub_mocap = self.create_subscription(
-            QuaternionStamped, '/mocap/orientation', self.mocap_cb, 10)
+            QuaternionStamped, '/mocap/orientation', self.mocap_cb, 1)
         self.sub_kalman = self.create_subscription(
-            QuaternionStamped, 'orientation_kalman', self.kalman_cb, 10)
+            QuaternionStamped, 'orientation_kalman', self.kalman_cb, 1)
         self.sub_madgwick = self.create_subscription(
-            QuaternionStamped, 'orientation_madgwick', self.madgwick_cb, 10)
+            QuaternionStamped, 'orientation_madgwick', self.madgwick_cb, 1)
         self.sub_imu = self.create_subscription(
-            Imu, 'imu', self.imu_cb, 10)
+            Imu, 'imu', self.imu_cb, 1)
         self.sub_mocap_vel = self.create_subscription(
-            Twist, '/rigid_body_velocity_filter', self.mocap_vel_cb, 10)
+            Twist, '/rigid_body_velocity_filter', self.mocap_vel_cb, 1)
 
         # Gyro calibration offsets (deg/s, raw sensor frame), same as imu_cb()
         # in dyna_real_interface.cpp, so base_ang_vel here matches what would
