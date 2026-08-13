@@ -176,7 +176,7 @@ class OptiTrackVelocityNode(Node):
         self.declare_parameter("kf_pos_noise",  1e-4)
         self.declare_parameter("kf_vel_noise",  1e-2)
         self.declare_parameter("kf_meas_noise", 1e-6)
-        self.declare_parameter("ang_lpf_cutoff_hz", 10.0)
+        self.declare_parameter("ang_lpf_cutoff_hz",5.0)
         self.declare_parameter("max_dt",        0.5)
 
         self.target_name = self.get_parameter("rigid_body_name").value
