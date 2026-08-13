@@ -28,6 +28,7 @@ REQUIRED_COLUMNS = [
     "mocap_qw", "mocap_qx", "mocap_qy", "mocap_qz",
     "kalman_qw", "kalman_qx", "kalman_qy", "kalman_qz",
     "madgwick_qw", "madgwick_qx", "madgwick_qy", "madgwick_qz",
+    "mocap_wx", "mocap_wy", "mocap_wz",
 ]
 
 
@@ -307,6 +308,45 @@ def choose_plot_indices(n_rows: int, max_points: int) -> np.ndarray:
     return np.linspace(0, n_rows - 1, max_points, dtype=int)
 
 
+def save_csv_data(time_s: np.ndarray, g_mocap: np.ndarray, g_kalman_offset: np.ndarray,
+    g_madgwick_offset: np.ndarray, output_path: Path) -> None:
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'timestamp',
+            'mocap_gx', 'mocap_gy', 'mocap_gz',
+            'kalman_offset_gx', 'kalman_offset_gy', 'kalman_offset_gz',
+            'madgwick_offset_gx', 'madgwick_offset_gy', 'madgwick_offset_gz'
+        ])
+        for i in range(len(time_s)):
+            writer.writerow([
+                f"{time_s[i]:.6f}",
+                f"{g_mocap[i, 0]:.6f}", f"{g_mocap[i, 1]:.6f}", f"{g_mocap[i, 2]:.6f}",
+                f"{g_kalman_offset[i, 0]:.6f}", f"{g_kalman_offset[i, 1]:.6f}", f"{g_kalman_offset[i, 2]:.6f}",
+                f"{g_madgwick_offset[i, 0]:.6f}", f"{g_madgwick_offset[i, 1]:.6f}", f"{g_madgwick_offset[i, 2]:.6f}"
+            ])
+
+
+def save_angular_velocity_csv(time_s: np.ndarray, data: dict[str, np.ndarray],
+    R_imu_to_mocap: np.ndarray, output_path: Path) -> None:
+    n = len(time_s)
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'timestamp',
+            'imu_wx_corrected', 'imu_wy_corrected', 'imu_wz_corrected',
+            'mocap_wx', 'mocap_wy', 'mocap_wz'
+        ])
+        for i in range(n):
+            imu_w = np.array([data["imu_wx"][i], data["imu_wy"][i], data["imu_wz"][i]])
+            imu_w_corrected = R_imu_to_mocap @ imu_w
+            writer.writerow([
+                f"{time_s[i]:.6f}",
+                f"{imu_w_corrected[0]:.6f}", f"{imu_w_corrected[1]:.6f}", f"{imu_w_corrected[2]:.6f}",
+                f"{data['mocap_wx'][i]:.6f}", f"{data['mocap_wy'][i]:.6f}", f"{data['mocap_wz'][i]:.6f}"
+            ])
+
+
 def save_plot(time_s: np.ndarray, g_mocap: np.ndarray, g_series: dict[str, np.ndarray],
     max_points: int, output_path: Path) -> None:
     axes_names = ("x", "y", "z")
@@ -412,6 +452,14 @@ def main() -> None:
     args.plot_output.parent.mkdir(parents=True, exist_ok=True)
     save_plot(time_s, g_mocap, raw_series, args.max_plot_points, args.plot_output)
     print(f"\nGráfico guardado en: {args.plot_output.resolve()}")
+
+    csv_output = args.plot_output.parent / (args.plot_output.stem + '.csv')
+    save_csv_data(time_s, g_mocap, g_kalman_offset, g_madgwick_fixed, csv_output)
+    print(f"CSV guardado en: {csv_output.resolve()}")
+
+    ang_vel_csv = args.plot_output.parent / "angular_velocity_comparison.csv"
+    save_angular_velocity_csv(time_s, data, R_imu_to_mocap, ang_vel_csv)
+    print(f"CSV velocidad angular guardado en: {ang_vel_csv.resolve()}")
 
 
 if __name__ == "__main__":
