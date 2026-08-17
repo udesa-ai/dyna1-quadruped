@@ -74,7 +74,6 @@ def load_csv(csv_path: Path) -> dict[str, np.ndarray]:
     return {col: np.array([float(row[col]) for row in rows]) for col in REQUIRED_COLUMNS}
 
 
-# ---- Cuaterniones (mismas convenciones que filter_comparison2.py) ----
 
 def quat_normalize(q: np.ndarray) -> np.ndarray:
     return q / np.linalg.norm(q)
@@ -150,7 +149,6 @@ def initial_quaternion_from_accel(accel_corrected: np.ndarray) -> np.ndarray:
     return quat_from_two_vectors(accel_dir, g_dir)
 
 
-# ---- EKF con los Jacobianos F y H corregidos ----
 
 class FixedKalman:
     """Mismo EKF que kalman_predict()/kalman_update() en filter_comparison2.py,
@@ -177,9 +175,6 @@ class FixedKalman:
         self.Q = np.eye(4) * q_scale
         self.R = np.eye(3) * r_scale
         self.dt_ref = dt_ref
-        # Rechazo adaptativo: cuanto más se aleja |accel| de g, menos se
-        # confía en la medición (probablemente es aceleración lineal del
-        # movimiento contaminando la referencia de gravedad, no sólo ruido).
         self.adaptive_gain = adaptive_gain
 
     def predict(self, gyro: np.ndarray, dt: float) -> None:
@@ -209,9 +204,7 @@ class FixedKalman:
         innov = accel_norm - h_norm
 
         w, x, y, z = self.q
-        # d(h_norm)/dq ; |h(q)| = 9.81 exacto para cualquier q unitario
-        # (rotación preserva norma), así que dividir por g normaliza sin
-        # necesidad de la regla del cociente completa.
+
         H = 2.0 * np.array([
             [ y, -z,  w, -x],
             [-x, -w, -z, -y],
@@ -417,37 +410,11 @@ def main() -> None:
     for name, g in raw_series.items():
         print(f"  {name:<18}: {rmse(g_mocap, g):.4f} m/s²")
 
-    # Mismo paso que convert_proj_grav.py: ajustar una R fija por filtro
-    # (Kabsch) que compensa el desalineamiento de montaje/yaw, y recién ahí
-    # comparar contra Mocap en igualdad de condiciones.
     fit_slice = slice(None, args.align_samples)
     print(f"\nAjustando R de mounting/yaw por filtro con: "
           f"{'toda la trayectoria' if args.align_samples is None else f'primeras {args.align_samples} muestras'}")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    # corrected_series: dict[str, np.ndarray] = {}
-    # for name, g_raw in raw_series.items():
-    #     g_corrected = g_raw @ R.T
-    #     corrected_series[name] = g_corrected
-
-    #     print(f"\n[{name}] R (gravedad {name} -> Mocap):")
-    #     print(np.array2string(R, precision=6, suppress_small=True))
-    #     print(f"  Ángulo de R  : {rotation_angle_deg(R):.2f} deg")
-    #     print(f"  RMSE sin corregir: {rmse(g_mocap, g_raw):.4f} m/s²")
-    #     print(f"  RMSE corregido   : {rmse(g_mocap, g_corrected):.4f} m/s²")
-
-    #     if name == "Kalman arreglado":
-    #         output_path = args.output_dir / "grav_R_kalman_fixed_to_mocap.npy"
-    #         np.save(output_path, R)
-    #         print(f"  R guardada en: {output_path.resolve()}")
-        # elif name == "Kalman error-state":
-        #     output_path = args.output_dir / "grav_R_kalman_eskf_to_mocap.npy"
-        #     np.save(output_path, R)
-        #     print(f"  R guardada en: {output_path.resolve()}")
-        # elif name == "Kalman error-state (offset re-estimado)":
-        #     output_path = args.output_dir / "grav_R_kalman_eskf_fit_to_mocap.npy"
-        #     np.save(output_path, R)
-        #     print(f"  R guardada en: {output_path.resolve()}")
 
     args.plot_output.parent.mkdir(parents=True, exist_ok=True)
     save_plot(time_s, g_mocap, raw_series, args.max_plot_points, args.plot_output)
