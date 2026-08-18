@@ -14,8 +14,7 @@ import math
 import json
 import os
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-
+DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
 
 class FilterComparison(Node):
     """Compare Madgwick vs Kalman filter for IMU orientation estimation"""
@@ -31,18 +30,14 @@ class FilterComparison(Node):
         # (network_input's projected_gravity is already normalized to a unit
         # vector, so it can't be used for accel_norm below).
         self.sub_raw_imu = self.create_subscription(
-            Imu, 'imu', self.raw_imu_cb, 10)
+            Imu, 'imu', self.raw_imu_cb, 1)
         self.raw_accel = None
 
         # Publishers for both filters
-        self.pub_madgwick = self.create_publisher(
-            Vector3Stamped, 'gravity_madgwick', 10)
-        self.pub_kalman = self.create_publisher(
-            Vector3Stamped, 'gravity_kalman', 10)
         self.pub_orientation_madgwick = self.create_publisher(
-            QuaternionStamped, 'orientation_madgwick', 10)
+            QuaternionStamped, 'orientation_madgwick', 1)
         self.pub_orientation_kalman = self.create_publisher(
-            QuaternionStamped, 'orientation_kalman', 10)
+            QuaternionStamped, 'orientation_kalman', 1)
 
         # Madgwick filter
         self.madgwick = Madgwick(sampleperiod=1/100)
@@ -52,6 +47,10 @@ class FilterComparison(Node):
         self.q_kalman = np.array([1.0, 0.0, 0.0, 0.0])
         self.P_kalman = np.eye(4) * 0.1  # State covariance
         self.last_time = None
+        self.last_robot_accel = np.array([0.0, 0.0, 0.0])  # Extracted robot acceleration
+
+        # IMU offset from center of mass [m] (x, y, z)
+        self.imu_offset = np.array([0.27, 0.0, 0.0])
 
         # Kalman parameters
         self.dt_ref = 1 / 100
@@ -88,6 +87,7 @@ class FilterComparison(Node):
             'kalman_qw', 'kalman_qx', 'kalman_qy', 'kalman_qz',
             'madgwick_roll_deg', 'madgwick_pitch_deg', 'madgwick_yaw_deg',
             'kalman_roll_deg', 'kalman_pitch_deg', 'kalman_yaw_deg',
+            'robot_accel_x', 'robot_accel_y', 'robot_accel_z',
             'kalman_converged', 'kalman_P_change', 'convergence_counter'
         ])
         self.csv_file_handle.flush()
@@ -208,20 +208,23 @@ class FilterComparison(Node):
             # Check for convergence
             self.check_convergence()
 
-    def kalman_update(self, accel):
-        """Extended Kalman Filter update step with accelerometer"""
-        # Normalize accelerometer
-        accel_norm = accel / (np.linalg.norm(accel) + 1e-8)
-
+    def kalman_update(self, accel_corrected):
+        """Extended Kalman Filter update step with accelerometer (already corrected for centripetal)"""
         # Expected gravity in body frame from current quaternion estimate
         R = self.quat_to_rotmat(self.q_kalman)
         g_world = np.array([0.0, 0.0, -9.81])
         g_expected = R.T @ g_world
 
+        # Extract robot's linear acceleration (residual after removing gravity)
+        self.last_robot_accel = accel_corrected - g_expected
+
+        # Normalize both measured and expected gravity for comparison
+        accel_norm = accel_corrected / (np.linalg.norm(accel_corrected) + 1e-8)
+        h_norm = g_expected / (np.linalg.norm(g_expected) + 1e-8)
+
         # Measurement function: h(q) = R(q)^T @ g_world
-        # We measure accel (which is gravity when stationary)
-        z = accel_norm  # Measured acceleration (normalized)
-        h = g_expected / (np.linalg.norm(g_expected) + 1e-8)  # Expected measurement
+        z = accel_norm  # Measured gravity (normalized, motion-corrected)
+        h = h_norm  # Expected measurement
 
         # Innovation (measurement residual)
         y = z - h  # 3x1 vector
@@ -286,6 +289,10 @@ class FilterComparison(Node):
         # Raw accelerometer, remapped to body frame (see raw_imu_cb), magnitude preserved
         accel = self.raw_accel
 
+        # Correct for centripetal acceleration due to IMU offset from center of mass
+        a_centripetal = np.cross(gyro, np.cross(gyro, self.imu_offset))
+        accel_corrected = accel - a_centripetal
+
         # Calculate dt for Kalman
         current_time = self.get_clock().now()
         if self.last_time is not None:
@@ -296,11 +303,11 @@ class FilterComparison(Node):
 
         # Update Madgwick (explicit dt: network_input arrives at ~50Hz, not the
         # 100Hz assumed by the sampleperiod passed to the Madgwick constructor)
-        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel, dt=dt)
+        self.q_madgwick = self.madgwick.updateIMU(self.q_madgwick, gyr=gyro, acc=accel_corrected)
 
         # Update Kalman: Predict + Update
         self.kalman_predict(gyro, dt)
-        self.kalman_update(accel)
+        self.kalman_update(accel_corrected)
 
         # Convert to Euler angles
         madgwick_roll, madgwick_pitch, madgwick_yaw = self.quat_to_euler(self.q_madgwick)
@@ -325,7 +332,7 @@ class FilterComparison(Node):
         # Calculate P change for convergence monitoring
         P_change = np.linalg.norm(self.P_kalman - self.P_kalman_prev) if hasattr(self, 'P_kalman_prev') else 0.0
 
-        # Save to CSV (orientation in degrees + convergence info)
+        # Save to CSV (orientation in degrees + robot acceleration + convergence info)
         self.csv_writer.writerow([
             f"{timestamp:.6f}",
             f"{gyro[0]:.6f}", f"{gyro[1]:.6f}", f"{gyro[2]:.6f}",
@@ -336,6 +343,7 @@ class FilterComparison(Node):
             f"{self.q_kalman[2]:.6f}", f"{self.q_kalman[3]:.6f}",
             f"{madgwick_roll_deg:.6f}", f"{madgwick_pitch_deg:.6f}", f"{madgwick_yaw_deg:.6f}",
             f"{kalman_roll_deg:.6f}", f"{kalman_pitch_deg:.6f}", f"{kalman_yaw_deg:.6f}",
+            f"{self.last_robot_accel[0]:.6f}", f"{self.last_robot_accel[1]:.6f}", f"{self.last_robot_accel[2]:.6f}",
             f"{int(self.kalman_converged)}", f"{P_change:.9f}", f"{self.convergence_counter}"
         ])
         self.csv_file_handle.flush()

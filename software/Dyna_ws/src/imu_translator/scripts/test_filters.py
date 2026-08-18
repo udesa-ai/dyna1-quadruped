@@ -26,8 +26,6 @@ REQUIRED_COLUMNS = [
     "timestamp", "ax", "ay", "az",
     "imu_wx", "imu_wy", "imu_wz",
     "mocap_qw", "mocap_qx", "mocap_qy", "mocap_qz",
-    "kalman_qw", "kalman_qx", "kalman_qy", "kalman_qz",
-    "madgwick_qw", "madgwick_qx", "madgwick_qy", "madgwick_qz",
     "mocap_wx", "mocap_wy", "mocap_wz",
 ]
 
@@ -301,13 +299,14 @@ def choose_plot_indices(n_rows: int, max_points: int) -> np.ndarray:
     return np.linspace(0, n_rows - 1, max_points, dtype=int)
 
 
-def save_csv_data(time_s: np.ndarray, g_mocap: np.ndarray, g_kalman_offset: np.ndarray,
+def save_csv_data(time_s: np.ndarray, g_mocap: np.ndarray, g_kalman: np.ndarray, g_kalman_offset: np.ndarray,
     g_madgwick_offset: np.ndarray, output_path: Path) -> None:
     with open(output_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
             'timestamp',
             'mocap_gx', 'mocap_gy', 'mocap_gz',
+            'kalman_gx', 'kalman_gy', 'kalman_gz',
             'kalman_offset_gx', 'kalman_offset_gy', 'kalman_offset_gz',
             'madgwick_offset_gx', 'madgwick_offset_gy', 'madgwick_offset_gz'
         ])
@@ -315,6 +314,7 @@ def save_csv_data(time_s: np.ndarray, g_mocap: np.ndarray, g_kalman_offset: np.n
             writer.writerow([
                 f"{time_s[i]:.6f}",
                 f"{g_mocap[i, 0]:.6f}", f"{g_mocap[i, 1]:.6f}", f"{g_mocap[i, 2]:.6f}",
+                f"{g_kalman[i, 0]:.6f}", f"{g_kalman[i, 1]:.6f}", f"{g_kalman[i, 2]:.6f}",
                 f"{g_kalman_offset[i, 0]:.6f}", f"{g_kalman_offset[i, 1]:.6f}", f"{g_kalman_offset[i, 2]:.6f}",
                 f"{g_madgwick_offset[i, 0]:.6f}", f"{g_madgwick_offset[i, 1]:.6f}", f"{g_madgwick_offset[i, 2]:.6f}"
             ])
@@ -346,16 +346,15 @@ def save_plot(time_s: np.ndarray, g_mocap: np.ndarray, g_series: dict[str, np.nd
     indices = choose_plot_indices(len(time_s), max_points)
     fig, axes = plt.subplots(3, 1, figsize=(13, 9), sharex=True)
     for i, (axis, axis_name) in enumerate(zip(axes, axes_names)):
-        axis.plot(time_s[indices], g_mocap[indices, i], label="Mocap")
+        axis.plot(time_s[indices], g_mocap[indices, i], label="Mocap", linewidth=2)
         for name, g in g_series.items():
-            if name not in ['Kalman original', 'Madgwick original']:
-                axis.plot(time_s[indices], g[indices, i], label=name, alpha=0.8)
+            axis.plot(time_s[indices], g[indices, i], label=name, alpha=0.8)
         axis.set_ylabel(f"g_{axis_name} [m/s²]")
         axis.set_title(f"Gravedad proyectada sobre el eje {axis_name.upper()}")
         axis.grid(True, alpha=0.3)
         axis.legend()
     axes[-1].set_xlabel("Tiempo [s]")
-    fig.suptitle("Gravedad proyectada: Mocap vs. Kalman (con y sin offset) vs. Madgwick (con offset)")
+    fig.suptitle("Gravedad Proyectada: Mocap vs. Kalman (offset) vs. Madgwick (offset)")
     fig.tight_layout()
     fig.savefig(output_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
@@ -369,8 +368,6 @@ def main() -> None:
     time_s = np.arange(n) * dt_nominal
 
     mocap_q = np.stack([data["mocap_qw"], data["mocap_qx"], data["mocap_qy"], data["mocap_qz"]], axis=1)
-    kalman_q_old = np.stack([data["kalman_qw"], data["kalman_qx"], data["kalman_qy"], data["kalman_qz"]], axis=1)
-    madgwick_q = np.stack([data["madgwick_qw"], data["madgwick_qx"], data["madgwick_qy"], data["madgwick_qz"]], axis=1)
 
     if not args.imu_to_mocap_r.exists():
         raise FileNotFoundError(
@@ -382,32 +379,27 @@ def main() -> None:
     print(np.array2string(R_imu_to_mocap, precision=6, suppress_small=True))
 
     print(f"Muestras: {n}  |  duración: {time_s[-1]:.2f} s  |  dt nominal: {dt_nominal:.5f} s")
-    print("Simulando Kalman aditivo con F y H corregidos...")
-    kalman_q_fixed = run_simulation(data, dt_nominal, R_imu_to_mocap=R_imu_to_mocap)
-    print("Simulando Kalman fixed...")
-    kalman_q_fixed_offset = run_simulation(data, dt_nominal, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
-    print("Simulando Kalman fixed offset...")
-    madgwick_q_fixed = run_madgwick_simulation(data, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
-    print("Simulando Madgwick arreglado...")
+    print("Simulando Kalman sin offset...")
+    kalman_q = run_simulation(data, dt_nominal, R_imu_to_mocap=R_imu_to_mocap)
+    print("Simulando Kalman con offset...")
+    kalman_q_offset = run_simulation(data, dt_nominal, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
+    print("Simulando Madgwick con offset...")
+    madgwick_q_offset = run_madgwick_simulation(data, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
+    print("Simulaciones completadas.")
 
 
     g_mocap = project_gravity_batch(mocap_q)
-    g_kalman_old = project_gravity_batch(kalman_q_old)
-    g_madgwick = project_gravity_batch(madgwick_q)
-    g_kalman_fixed = project_gravity_batch(kalman_q_fixed)
-    g_kalman_offset =project_gravity_batch(kalman_q_fixed_offset)
-    g_madgwick_fixed = project_gravity_batch(madgwick_q_fixed)
+    g_kalman = project_gravity_batch(kalman_q)
+    g_kalman_offset = project_gravity_batch(kalman_q_offset)
+    g_madgwick_offset = project_gravity_batch(madgwick_q_offset)
 
-
-    print("\nRMSE vs. Mocap (sin corregir mounting/yaw, sólo para comparar el efecto del fix):")
-    raw_series = {
-        "Kalman original": g_kalman_old,
-        "Madgwick original": g_madgwick,
-        "Kalman arreglado": g_kalman_fixed,
+    print("\nRMSE vs. Mocap:")
+    filters = {
+        "Kalman": g_kalman,
         "Kalman offset": g_kalman_offset,
-        "Madgwick offset": g_madgwick_fixed,
+        "Madgwick offset": g_madgwick_offset,
     }
-    for name, g in raw_series.items():
+    for name, g in filters.items():
         print(f"  {name:<18}: {rmse(g_mocap, g):.4f} m/s²")
 
     fit_slice = slice(None, args.align_samples)
@@ -417,11 +409,11 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     args.plot_output.parent.mkdir(parents=True, exist_ok=True)
-    save_plot(time_s, g_mocap, raw_series, args.max_plot_points, args.plot_output)
-    print(f"\nGráfico guardado en: {args.plot_output.resolve()}")
+    save_plot(time_s, g_mocap, filters, args.max_plot_points, args.plot_output)
+    print(f"Gráfico guardado en: {args.plot_output.resolve()}")
 
     csv_output = args.plot_output.parent / (args.plot_output.stem + '.csv')
-    save_csv_data(time_s, g_mocap, g_kalman_offset, g_madgwick_fixed, csv_output)
+    save_csv_data(time_s, g_mocap, g_kalman, g_kalman_offset, g_madgwick_offset, csv_output)
     print(f"CSV guardado en: {csv_output.resolve()}")
 
     ang_vel_csv = args.plot_output.parent / "angular_velocity_comparison.csv"
