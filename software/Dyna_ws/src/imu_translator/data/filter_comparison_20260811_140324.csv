@@ -1,1 +1,0 @@
-timestamp,gx,gy,gz,ax,ay,az,madgwick_qw,madgwick_qx,madgwick_qy,madgwick_qz,kalman_qw,kalman_qx,kalman_qy,kalman_qz,madgwick_roll_deg,madgwick_pitch_deg,madgwick_yaw_deg,kalman_roll_deg,kalman_pitch_deg,kalman_yaw_deg,robot_accel_x,robot_accel_y,robot_accel_z,kalman_converged,kalman_P_change,convergence_counter
