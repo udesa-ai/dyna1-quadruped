@@ -225,7 +225,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     timer_ = create_wall_timer(
         std::chrono::milliseconds(20),
-        std::bind(&RealInterface::control2, this), timer_cb_group_
+        std::bind(&RealInterface::control, this), timer_cb_group_
     );
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"READY TO GO!");

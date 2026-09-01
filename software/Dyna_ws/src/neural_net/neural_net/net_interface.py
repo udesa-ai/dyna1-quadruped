@@ -6,6 +6,10 @@ import time
 import torch
 import torch.nn as nn
 from ahrs.filters import Madgwick
+import csv
+import os
+from datetime import datetime
+from pathlib import Path
 
 # Define the model architecture
 class ActorMLP(nn.Module):
@@ -72,6 +76,23 @@ class NeuralNet(Node):
 
         self.iteration_i = 0
         self.iteration_a = 0
+
+        # Initialize CSV for recording observations
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        data_dir = Path.home() / "neural_net_data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        self.csv_path = data_dir / f"observations_{timestamp}.csv"
+        self.csv_file = open(self.csv_path, 'w', newline='')
+        self.csv_writer = csv.writer(self.csv_file)
+
+        # Write header: timestamp + 48 observation values + 12 actions
+        header = ['timestamp']
+        header += [f'obs_{i}' for i in range(48)]
+        header += [f'action_{i}' for i in range(12)]
+        self.csv_writer.writerow(header)
+        self.csv_file.flush()
+
+        self.get_logger().info(f'Observations will be saved to: {self.csv_path}')
 
     def quat_to_rotmat(self, q):
         w, x, y, z = q
@@ -178,6 +199,12 @@ class NeuralNet(Node):
         self.publish_input(input_data)
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
         self.actions = output
+
+        # Save observations to CSV
+        timestamp = time.time()
+        row = [f"{timestamp:.6f}"] + [f"{val:.6f}" for val in input_data] + [f"{val:.6f}" for val in output]
+        self.csv_writer.writerow(row)
+        self.csv_file.flush()
         self.real_actions = []
         temp_actions = self.change_order(self.actions, forwards = False)
         offsets = [0.0, -0.79, 1.5]
@@ -262,6 +289,13 @@ class NeuralNet(Node):
         ja_msg.header.stamp = t.to_msg()
 
         self.pub_joint_angles.publish(ja_msg)
+
+    def destroy_node(self):
+        """Close CSV file when node shuts down."""
+        if hasattr(self, 'csv_file') and not self.csv_file.closed:
+            self.csv_file.close()
+            self.get_logger().info(f'Observations saved to: {self.csv_path}')
+        super().destroy_node()
 
 
 def main(args=None):
