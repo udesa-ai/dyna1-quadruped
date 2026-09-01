@@ -5,11 +5,104 @@ from joint_msgs.msg import Joints, NeuralInput, NeuralInputComplete
 import time
 import torch
 import torch.nn as nn
-from ahrs.filters import Madgwick
 import csv
 import os
 from datetime import datetime
 from pathlib import Path
+
+
+NET_INPUT_DT = 0.02
+
+GRAVITY = 9.81
+G_WORLD = np.array([0.0, 0.0, -GRAVITY])
+
+
+def quat_normalize(q: np.ndarray) -> np.ndarray:
+    return q / np.linalg.norm(q)
+
+
+def quat_multiply(q1: np.ndarray, q2: np.ndarray) -> np.ndarray:
+    w1, x1, y1, z1 = q1
+    w2, x2, y2, z2 = q2
+    return np.array([
+        w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2,
+        w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+        w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+        w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+    ])
+
+
+def quat_to_rotmat(q: np.ndarray) -> np.ndarray:
+    w, x, y, z = q
+    return np.array([
+        [1 - 2 * (y**2 + z**2),     2 * (x * y - z * w),       2 * (x * z + y * w)],
+        [    2 * (x * y + z * w), 1 - 2 * (x**2 + z**2),       2 * (y * z - x * w)],
+        [    2 * (x * z - y * w),     2 * (y * z + x * w),   1 - 2 * (x**2 + y**2)],
+    ])
+
+
+class Kalman:
+    def __init__(
+        self,
+        dt_ref: float,
+        q_scale: float = 0.001,
+        r_scale: float = 30.0,
+        adaptive_gain: float = 80.0,
+        q_init: np.ndarray | None = None,
+    ):
+        self.q = np.array([1.0, 0.0, 0.0, 0.0]) if q_init is None else q_init
+        self.P = np.eye(4) * 0.1
+        self.Q = np.eye(4) * q_scale
+        self.R = np.eye(3) * r_scale
+        self.dt_ref = dt_ref
+        self.adaptive_gain = adaptive_gain
+
+    def predict(self, gyro: np.ndarray, dt: float) -> None:
+        if dt <= 0:
+            return
+        omega_quat = np.array([0.0, gyro[0], gyro[1], gyro[2]])
+        q_dot = 0.5 * quat_multiply(self.q, omega_quat)
+        self.q = quat_normalize(self.q + q_dot * dt)
+
+        wx, wy, wz = gyro
+        Omega = np.array([
+            [0.0, -wx, -wy, -wz],
+            [wx,   0.0,  wz, -wy],
+            [wy,  -wz,  0.0,  wx],
+            [wz,   wy, -wx,  0.0],
+        ])
+        F = np.eye(4) + 0.5 * dt * Omega
+        self.P = F @ self.P @ F.T + self.Q * (dt / self.dt_ref)
+
+    def update(self, accel_corrected: np.ndarray) -> None:
+        R_body = quat_to_rotmat(self.q)
+        g_expected = R_body.T @ G_WORLD
+
+        accel_mag = np.linalg.norm(accel_corrected)
+        accel_norm = accel_corrected / (accel_mag + 1e-8)
+        h_norm = g_expected / (np.linalg.norm(g_expected) + 1e-8)
+        innov = accel_norm - h_norm
+
+        w, x, y, z = self.q
+
+        H = 2.0 * np.array([
+            [ y, -z,  w, -x],
+            [-x, -w, -z, -y],
+            [0.0, 2 * x, 2 * y, 0.0],
+        ])
+
+        deviation = abs(accel_mag - GRAVITY) / GRAVITY
+        R_eff = self.R * (1.0 + self.adaptive_gain * deviation**2)
+
+        S = H @ self.P @ H.T + R_eff
+        try:
+            K = self.P @ H.T @ np.linalg.inv(S)
+        except np.linalg.LinAlgError:
+            K = np.zeros((4, 3))
+
+        self.q = quat_normalize(self.q + K @ innov)
+        self.P = (np.eye(4) - K @ H) @ self.P
+
 
 # Define the model architecture
 class ActorMLP(nn.Module):
@@ -46,8 +139,8 @@ class NeuralNet(Node):
         self.model.load_state_dict(actor_state_dict)
         self.model.eval()
 
-        self.madgwick = Madgwick(sampleperiod=1/100)
-        self.q = np.array([1.0, 0.0, 0.0, 0.0])  # Initial quaternion
+        self.kf = Kalman(dt_ref=NET_INPUT_DT)
+        self.q = self.kf.q  # Initial quaternion
 
         # Actions
         self.actions = [0,0,0,0,0,0,0,0,0,0,0,0]
@@ -56,7 +149,7 @@ class NeuralNet(Node):
         ########### Pub & Sub ###########
         #################################
 
-        # Subscription todos los input de la red
+        # Subscribe to net inputs
         self.neural_sub = self.create_subscription(
             NeuralInput,
             'network_input',
@@ -125,13 +218,15 @@ class NeuralNet(Node):
                      msg.base_ang_vel_y,
                      msg.base_ang_vel_z])
     
-        # Accel in m/s^2 (normalize inside filter)
-        accel = np.array([-msg.projected_gravity_x,
-                        -msg.projected_gravity_y,
-                        -msg.projected_gravity_z])
+
+        accel_corrected = np.array([msg.projected_gravity_x,
+                        msg.projected_gravity_y,
+                        msg.projected_gravity_z]) * GRAVITY
 
         # Update quaternion
-        self.q = self.madgwick.updateIMU(self.q, gyr=gyro, acc=accel)
+        self.kf.predict(gyro, NET_INPUT_DT)
+        self.kf.update(accel_corrected)
+        self.q = self.kf.q
 
         # Compute projected gravity from quaternion
         # Rotation matrix from quaternion:

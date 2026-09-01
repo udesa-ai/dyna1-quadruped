@@ -9,10 +9,10 @@ rotación (R^T R = I, det(R) = 1) - es el problema de Procrustes ortogonal
 (Wahba), resuelto en forma cerrada vía SVD (algoritmo de Kabsch).
 
 Uso:
-    python3 estimate_R.py archivo.csv [archivo2.csv ...]
+    python3 estimate_ang_vel_R.py archivo.csv [archivo2.csv ...]
 
 Opcional:
-    python3 estimate_R.py archivo.csv --output R.npy
+    python3 estimate_ang_vel_R.py archivo.csv --output R.npy
 """
 
 from __future__ import annotations
@@ -26,8 +26,9 @@ import pandas as pd
 
 
 DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
-SAVE_DIR = DATA_DIR / "rotation"
-PATH_CSV = DATA_DIR / "filter_validation_20260811_141950.csv" #"filter_validation_20260807_150721.csv"
+CSV = "filter_validation_20260811_141753"
+SAVE_DIR = DATA_DIR / CSV
+PATH_CSV = DATA_DIR / f"{CSV}.csv"
 REQUIRED_COLUMNS = ["imu_wx", "imu_wy", "imu_wz", "mocap_wx", "mocap_wy", "mocap_wz"]
 
 

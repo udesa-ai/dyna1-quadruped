@@ -1,7 +1,7 @@
 """
 
 Uso (correr con cwd = software/Dyna_ws/):
-    python3 src/imu_translator/imu_translator/simulate_fixed_kalman.py
+    python3 src/imu_translator/imu_translator/test_filters.py
 """
 
 from __future__ import annotations
@@ -12,15 +12,19 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 from ahrs.filters import Madgwick
 
 DATA_DIR = Path.cwd() / "src" / "imu_translator" / "data"
-PATH_CSV = DATA_DIR / "filter_validation_20260807_150343.csv"#"filter_validation_20260807_150721.csv" #"filter_validation_20260811_141950.csv" 
-SAVE_DIR = DATA_DIR / "rotation"
+CSV = "filter_validation_20260811_141753"
+SAVE_DIR = DATA_DIR / CSV
+PATH_CSV = DATA_DIR / f"{CSV}.csv"
 
 GRAVITY = 9.81
 G_WORLD = np.array([0.0, 0.0, -GRAVITY])
-IMU_OFFSET = np.array([0.24, 0.0, 0.0])  
+IMU_OFFSET = np.array([0.24, 0.0, 0.0])
+
+IMU_PARAMS_YAML = Path(__file__).resolve().parents[2] / "controler_cpp" / "config" / "imu_params.yaml"
 
 REQUIRED_COLUMNS = [
     "timestamp", "ax", "ay", "az",
@@ -32,7 +36,7 @@ REQUIRED_COLUMNS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Simula el Kalman de filter_comparison2.py con los Jacobianos F y H corregidos."
+        description="Simula el Kalman de filter_comparison.py con los Jacobianos F y H corregidos."
     )
     parser.add_argument(
         "csv_path", type=Path, nargs="?", default=PATH_CSV,
@@ -71,6 +75,15 @@ def load_csv(csv_path: Path) -> dict[str, np.ndarray]:
         rows = list(reader)
     return {col: np.array([float(row[col]) for row in rows]) for col in REQUIRED_COLUMNS}
 
+
+def load_imu_offsets(yaml_path: Path = IMU_PARAMS_YAML) -> tuple[np.ndarray, np.ndarray]:
+    """Gyro (deg/s) and accel (g) calibration offsets, raw sensor frame (x, y, z),
+    the same values dyna_real_interface.cpp's imu_cb() subtracts before remapping."""
+    with open(yaml_path) as f:
+        params = yaml.safe_load(f)["/interface"]["ros__parameters"]
+    gyro_bias = np.array([params["gyro_offset_x"], params["gyro_offset_y"], params["gyro_offset_z"]])
+    accel_bias = np.array([params["accel_offset_x"], params["accel_offset_y"], params["accel_offset_z"]])
+    return gyro_bias, accel_bias
 
 
 def quat_normalize(q: np.ndarray) -> np.ndarray:
@@ -149,7 +162,7 @@ def initial_quaternion_from_accel(accel_corrected: np.ndarray) -> np.ndarray:
 
 
 class FixedKalman:
-    """Mismo EKF que kalman_predict()/kalman_update() en filter_comparison2.py,
+    """Mismo EKF que kalman_predict()/kalman_update() en filter_comparison.py,
     salvo por F y H, que ahí estaban aproximados a la identidad. Acá:
 
     - F = I + 0.5*dt*Omega(gyro), la Jacobiana real de la cinemática de
@@ -223,10 +236,15 @@ class FixedKalman:
 
 
 def preprocess_imu_sample( data: dict[str, np.ndarray], i: int,
-    offset: np.ndarray, R_imu_to_mocap: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    
-    gyro = np.array([data["imu_wx"][i], data["imu_wy"][i], data["imu_wz"][i]])
-    accel = np.array([-data["az"][i], -data["ax"][i], -data["ay"][i]]) * GRAVITY
+    offset: np.ndarray, R_imu_to_mocap: np.ndarray,
+    gyro_bias: np.ndarray = np.zeros(3), accel_bias: np.ndarray = np.zeros(3),
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+    gyro_bias_remapped = np.array([gyro_bias[2], gyro_bias[0], gyro_bias[1]]) * (np.pi / 180.0)
+    gyro = np.array([data["imu_wx"][i], data["imu_wy"][i], data["imu_wz"][i]]) - gyro_bias_remapped
+
+    accel_raw = np.array([data["ax"][i], data["ay"][i], data["az"][i]]) - accel_bias
+    accel = np.array([-accel_raw[2], -accel_raw[0], -accel_raw[1]]) * GRAVITY
 
     gyro = R_imu_to_mocap @ gyro
     accel = R_imu_to_mocap @ accel
@@ -237,16 +255,17 @@ def preprocess_imu_sample( data: dict[str, np.ndarray], i: int,
 
 
 def run_simulation(data: dict[str, np.ndarray], dt_nominal: float, q_scale: float = 0.001, r_scale: float = 30.0,
-    adaptive_gain: float = 80.0, offset=np.array([0.0, 0.0, 0.0]), R_imu_to_mocap: np.ndarray = np.eye(3)) -> np.ndarray:
+    adaptive_gain: float = 80.0, offset=np.array([0.0, 0.0, 0.0]), R_imu_to_mocap: np.ndarray = np.eye(3),
+    gyro_bias: np.ndarray = np.zeros(3), accel_bias: np.ndarray = np.zeros(3)) -> np.ndarray:
 
     n = len(data["timestamp"])
-    _, accel0 = preprocess_imu_sample(data, 0, offset, R_imu_to_mocap)
+    _, accel0 = preprocess_imu_sample(data, 0, offset, R_imu_to_mocap, gyro_bias, accel_bias)
     q_init = initial_quaternion_from_accel(accel0)
     kf = FixedKalman(dt_ref=dt_nominal, q_scale=q_scale, r_scale=r_scale, adaptive_gain=adaptive_gain, q_init=q_init)
     q_out = np.empty((n, 4))
 
     for i in range(n):
-        gyro, accel_corrected = preprocess_imu_sample(data, i, offset, R_imu_to_mocap)
+        gyro, accel_corrected = preprocess_imu_sample(data, i, offset, R_imu_to_mocap, gyro_bias, accel_bias)
         kf.predict(gyro, dt_nominal)
         kf.update(accel_corrected)
         q_out[i] = kf.q
@@ -255,16 +274,17 @@ def run_simulation(data: dict[str, np.ndarray], dt_nominal: float, q_scale: floa
 
 
 def run_madgwick_simulation(data: dict[str, np.ndarray],offset=np.array([0.0, 0.0, 0.0]),
-    R_imu_to_mocap: np.ndarray = np.eye(3)) -> np.ndarray:
+    R_imu_to_mocap: np.ndarray = np.eye(3), gyro_bias: np.ndarray = np.zeros(3),
+    accel_bias: np.ndarray = np.zeros(3)) -> np.ndarray:
 
     n = len(data["timestamp"])
     madgwick = Madgwick(sampleperiod=1 / 100)
-    _, accel0 = preprocess_imu_sample(data, 0, offset, R_imu_to_mocap)
+    _, accel0 = preprocess_imu_sample(data, 0, offset, R_imu_to_mocap, gyro_bias, accel_bias)
     q = initial_quaternion_from_accel(accel0)
     q_out = np.empty((n, 4))
 
     for i in range(n):
-        gyro, accel_corrected = preprocess_imu_sample(data, i, offset, R_imu_to_mocap)
+        gyro, accel_corrected = preprocess_imu_sample(data, i, offset, R_imu_to_mocap, gyro_bias, accel_bias)
         q = madgwick.updateIMU(q, gyr=gyro, acc=-accel_corrected)
         q_out[i] = q
 
@@ -321,8 +341,9 @@ def save_csv_data(time_s: np.ndarray, g_mocap: np.ndarray, g_kalman: np.ndarray,
 
 
 def save_angular_velocity_csv(time_s: np.ndarray, data: dict[str, np.ndarray],
-    R_imu_to_mocap: np.ndarray, output_path: Path) -> None:
+    R_imu_to_mocap: np.ndarray, output_path: Path, gyro_bias: np.ndarray = np.zeros(3)) -> None:
     n = len(time_s)
+    gyro_bias_remapped = np.array([gyro_bias[2], gyro_bias[0], gyro_bias[1]]) * (np.pi / 180.0)
     with open(output_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -331,7 +352,7 @@ def save_angular_velocity_csv(time_s: np.ndarray, data: dict[str, np.ndarray],
             'mocap_wx', 'mocap_wy', 'mocap_wz'
         ])
         for i in range(n):
-            imu_w = np.array([data["imu_wx"][i], data["imu_wy"][i], data["imu_wz"][i]])
+            imu_w = np.array([data["imu_wx"][i], data["imu_wy"][i], data["imu_wz"][i]]) - gyro_bias_remapped
             imu_w_corrected = R_imu_to_mocap @ imu_w
             writer.writerow([
                 f"{time_s[i]:.6f}",
@@ -378,13 +399,21 @@ def main() -> None:
     print(f"R (IMU -> Mocap) cargada de: {args.imu_to_mocap_r}")
     print(np.array2string(R_imu_to_mocap, precision=6, suppress_small=True))
 
+    gyro_bias, accel_bias = load_imu_offsets()
+    print(f"Offsets cargados de: {IMU_PARAMS_YAML}")
+    print(f"  gyro_offset (deg/s):  {gyro_bias}")
+    print(f"  accel_offset (g):     {accel_bias}")
+
     print(f"Muestras: {n}  |  duración: {time_s[-1]:.2f} s  |  dt nominal: {dt_nominal:.5f} s")
     print("Simulando Kalman sin offset...")
-    kalman_q = run_simulation(data, dt_nominal, R_imu_to_mocap=R_imu_to_mocap)
+    kalman_q = run_simulation(data, dt_nominal, R_imu_to_mocap=R_imu_to_mocap,
+                               gyro_bias=gyro_bias, accel_bias=accel_bias)
     print("Simulando Kalman con offset...")
-    kalman_q_offset = run_simulation(data, dt_nominal, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
+    kalman_q_offset = run_simulation(data, dt_nominal, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap,
+                                      gyro_bias=gyro_bias, accel_bias=accel_bias)
     print("Simulando Madgwick con offset...")
-    madgwick_q_offset = run_madgwick_simulation(data, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap)
+    madgwick_q_offset = run_madgwick_simulation(data, offset=IMU_OFFSET, R_imu_to_mocap=R_imu_to_mocap,
+                                                 gyro_bias=gyro_bias, accel_bias=accel_bias)
     print("Simulaciones completadas.")
 
 
@@ -417,7 +446,7 @@ def main() -> None:
     print(f"CSV guardado en: {csv_output.resolve()}")
 
     ang_vel_csv = args.plot_output.parent / "angular_velocity_comparison.csv"
-    save_angular_velocity_csv(time_s, data, R_imu_to_mocap, ang_vel_csv)
+    save_angular_velocity_csv(time_s, data, R_imu_to_mocap, ang_vel_csv, gyro_bias=gyro_bias)
     print(f"CSV velocidad angular guardado en: {ang_vel_csv.resolve()}")
 
 

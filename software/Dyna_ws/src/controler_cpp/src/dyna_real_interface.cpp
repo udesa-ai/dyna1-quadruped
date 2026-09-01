@@ -202,7 +202,7 @@ RealInterface::RealInterface(): Node("dyna_real_interface")
     sub_imu = this->create_subscription<sensor_msgs::msg::Imu>("imu",
     10,std::bind(&RealInterface::imu_cb, this, _1));
 
-    sub_velocity = this->create_subscription<geometry_msgs::msg::Twist>("rigid_body_velocity",
+    sub_velocity = this->create_subscription<geometry_msgs::msg::Twist>("rigid_body_velocity_filter",
     10,std::bind(&RealInterface::vel_cb, this, _1));
 
 
