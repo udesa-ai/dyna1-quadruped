@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import csv
 import os
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 
@@ -144,6 +145,9 @@ class NeuralNet(Node):
 
         # Actions
         self.actions = [0,0,0,0,0,0,0,0,0,0,0,0]
+
+        self.action_delay = 5
+        self.action_buffer = deque([[0.0]*12 for _ in range(self.action_delay)], maxlen=self.action_delay)
 
         #################################
         ########### Pub & Sub ###########
@@ -285,7 +289,7 @@ class NeuralNet(Node):
         input_vels[11] = msg.joint_velocity_11
         input_data[24:36] = self.change_order(input_vels)
         
-        input_data[36:48] = self.actions
+        input_data[36:48] = self.action_buffer.popleft()
 
         input_data = [float(value) for value in input_data]
         # log input data
@@ -294,6 +298,7 @@ class NeuralNet(Node):
         self.publish_input(input_data)
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
         self.actions = output
+        self.action_buffer.append(output)
 
         # Save observations to CSV
         timestamp = time.time()
