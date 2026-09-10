@@ -131,22 +131,51 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/ppo_policy.pt") #, map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/Documents/dyna1-quadruped/software/Dyna_ws/src/neural_net/policy/model_1499_sindelay.pt") #, map_location=torch.device('cpu'))
+        #checkpoint = torch.load("/home/dynabot/ppo_policy.pt")
+        # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
+        # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
+        if isinstance(checkpoint, dict):
+            if 'actor_state_dict' in checkpoint:
+                raw_weights = checkpoint['actor_state_dict']
+            elif 'model_state_dict' in checkpoint:
+                raw_weights = checkpoint['model_state_dict']
+            elif 'state_dict' in checkpoint:
+                raw_weights = checkpoint['state_dict']
+            else:
+                raw_weights = checkpoint
+        else:
+            raw_weights = checkpoint
 
-        model_state_dict = checkpoint['model_state_dict']
-        actor_state_dict = {k.replace('actor.', 'model.'): v for k, v in model_state_dict.items() if k.startswith('actor.')} 
+        # 2. Normalizar las claves al formato de ActorMLP ("model.0.weight", "model.0.bias", etc.)
+        clean_state_dict = {}
+        for k, v in raw_weights.items():
+            # Ignorar parámetros de critic y distribución de ruido (std)
+            if any(ignored in k for ignored in ['critic', 'distribution', 'std']):
+                continue
+            
+            new_k = k
+            if new_k.startswith('actor.'):
+                new_k = new_k.replace('actor.', '', 1)
+            
+            # Mapear las capas mlp.X.weight -> model.X.weight
+            if new_k.startswith('mlp.'):
+                new_k = new_k.replace('mlp.', 'model.', 1)
+            elif not new_k.startswith('model.'):
+                new_k = f'model.{new_k}'
+                
+            clean_state_dict[new_k] = v
 
         self.model = ActorMLP()
-        self.model.load_state_dict(actor_state_dict)
+        self.model.load_state_dict(clean_state_dict)
         self.model.eval()
 
         self.kf = Kalman(dt_ref=NET_INPUT_DT)
         self.q = self.kf.q  # Initial quaternion
-
         # Actions
         self.actions = [0,0,0,0,0,0,0,0,0,0,0,0]
 
-        self.action_delay = 5
+        self.action_delay = 1
         self.action_buffer = deque([[0.0]*12 for _ in range(self.action_delay)], maxlen=self.action_delay)
 
         #################################
@@ -176,7 +205,7 @@ class NeuralNet(Node):
 
         # Initialize CSV for recording observations
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        data_dir = Path.home() / "neural_net_data"
+        data_dir = Path.cwd() / "src" / "neural_net"  / "data"
         data_dir.mkdir(parents=True, exist_ok=True)
         self.csv_path = data_dir / f"observations_{timestamp}.csv"
         self.csv_file = open(self.csv_path, 'w', newline='')
@@ -238,7 +267,8 @@ class NeuralNet(Node):
         g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
 
         input_data[3:6] = gyro
-        input_data[6:9] = g_proj
+        input_data[6:9] = gyro
+        #input_data[6:9] = g_proj
         # print(g_proj)
 
         # input_data[6] = msg.projected_gravity_x

@@ -9,6 +9,6 @@
     accel_offset_z: 0.0 #-0.0181648322
 
     # Gyroscope bias (deg/s), raw sensor frame (x, y, z)
-    gyro_offset_x: 2.225856392
-    gyro_offset_y: -0.843956357
-    gyro_offset_z: 0.4882488121
+    gyro_offset_x: 2.237979117
+    gyro_offset_y: -0.8539788836
+    gyro_offset_z: 0.4906631278
