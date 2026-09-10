@@ -4,9 +4,9 @@ float32 base_lin_vel_z
 float32 base_ang_vel_x
 float32 base_ang_vel_y
 float32 base_ang_vel_z
-float32 projected_gravity_x
-float32 projected_gravity_y
-float32 projected_gravity_z
+float32 acceleration_x
+float32 acceleration_y
+float32 acceleration_z
 float32 x_velocity
 float32 y_velocity
 float32 w_rate
