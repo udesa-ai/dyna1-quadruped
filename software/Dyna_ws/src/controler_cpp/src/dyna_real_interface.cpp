@@ -257,9 +257,9 @@ void RealInterface::imu_cb(const sensor_msgs::msg::Imu::SharedPtr data)
     float y = -accel_x;
     float z = -accel_y;
     
-    projected_gravity[0] = x;
-    projected_gravity[1] = y;
-    projected_gravity[2] = z;
+    acceleration[0] = x;
+    acceleration[1] = y;
+    acceleration[2] = z;
 
     if (!readflag_data){
         readflag_data = true;
@@ -525,9 +525,9 @@ void RealInterface::move_nn(){
     input_data.base_ang_vel_x = base_ang_vel[0];
     input_data.base_ang_vel_y = base_ang_vel[1];
     input_data.base_ang_vel_z = base_ang_vel[2];
-    input_data.projected_gravity_x = projected_gravity[0];
-    input_data.projected_gravity_y = projected_gravity[1];
-    input_data.projected_gravity_z = projected_gravity[2];
+    input_data.acceleration_x = acceleration[0];
+    input_data.acceleration_y = acceleration[1];
+    input_data.acceleration_z = acceleration[2];
     input_data.x_velocity = mini_cmd.x_velocity;
     input_data.y_velocity = mini_cmd.y_velocity;
     input_data.w_rate = mini_cmd.rate;

@@ -267,8 +267,7 @@ class NeuralNet(Node):
         g_proj = R @ np.array([0.0, 0.0, -1.0])  # gravity in body frame
 
         input_data[3:6] = gyro
-        input_data[6:9] = gyro
-        #input_data[6:9] = g_proj
+        input_data[6:9] = g_proj
         # print(g_proj)
 
         # input_data[6] = msg.projected_gravity_x
