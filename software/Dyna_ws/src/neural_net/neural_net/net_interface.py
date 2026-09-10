@@ -131,7 +131,7 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/Documents/dyna1-quadruped/software/Dyna_ws/src/neural_net/policy/model_1499_sindelay.pt") #, map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/Documents/dyna1-quadruped/software/Dyna_ws/src/neural_net/policy/model_1499_exp122.pt") #, map_location=torch.device('cpu'))
         #checkpoint = torch.load("/home/dynabot/ppo_policy.pt")
         # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
         # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
@@ -252,9 +252,9 @@ class NeuralNet(Node):
                      msg.base_ang_vel_z])
     
 
-        accel_corrected = np.array([msg.projected_gravity_x,
-                        msg.projected_gravity_y,
-                        msg.projected_gravity_z]) * GRAVITY
+        accel_corrected = np.array([msg.acceleration_x,
+                        msg.acceleration_y,
+                        msg.acceleration_z]) * GRAVITY
 
         # Update quaternion
         self.kf.predict(gyro, NET_INPUT_DT)
