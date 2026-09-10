@@ -28,21 +28,21 @@
         "motor0": {
             "motorN": 1,
             "axisID": 3,
-            "iOffset": 0.04181249380111707,
+            "iOffset": 0.8359414593875409,
             "direction": -1,
             "calibration_angle": -35.6
         },
         "motor1": {
             "motorN": 0,
             "axisID": 4,
-            "iOffset": 1.2816874837875367,
+            "iOffset": 3.187308535575867,
             "direction": 1,
             "calibration_angle": -71.9
         },
         "motor2": {
             "motorN": 1,
             "axisID": 5,
-            "iOffset": -3.1895001578330993,
+            "iOffset": -2.8681916046142577,
             "direction": 1,
             "calibration_angle": 150.2
         }
