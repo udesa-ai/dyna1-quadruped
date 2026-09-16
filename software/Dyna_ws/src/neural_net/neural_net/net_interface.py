@@ -131,7 +131,7 @@ class NeuralNet(Node):
         ############ Variables ###############
         self.declare_parameter('model_path','')
         self.model_path = self.get_parameter("model_path").value
-        checkpoint = torch.load("/home/dynabot/Documents/dyna1-quadruped/software/Dyna_ws/src/neural_net/policy/model_1499_exp122.pt") #, map_location=torch.device('cpu'))
+        checkpoint = torch.load("/home/dynabot/Documents/dyna1-quadruped/software/Dyna_ws/src/neural_net/policy/model_1499_nomov1.pt") #, map_location=torch.device('cpu'))
         #checkpoint = torch.load("/home/dynabot/ppo_policy.pt")
         # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
         # 1. Extraer el sub-diccionario de pesos correcto desde el checkpoint
@@ -269,7 +269,7 @@ class NeuralNet(Node):
         input_data[3:6] = gyro
         input_data[6:9] = g_proj
         # print(g_proj)
-
+       
         # input_data[6] = msg.projected_gravity_x
         # input_data[7] = msg.projected_gravity_y
         # input_data[8] = msg.projected_gravity_z
@@ -319,13 +319,30 @@ class NeuralNet(Node):
         input_data[24:36] = self.change_order(input_vels)
         
         input_data[36:48] = self.action_buffer.popleft()
-
+        print(input_data[36:48])
         input_data = [float(value) for value in input_data]
         # log input data
         # self.print_input(input_data)
         # Publish the input data for debugging
         self.publish_input(input_data)
+        # if (vx == 0.0) and (vy == 0.0) and (msg.w_rate == 0.0):
+        #     output = torch.tensor([0.0]*12).squeeze(0).tolist()
+        # else: 
         output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
+
+        # self.previous_smoothed_output = [0.0] * 12
+        # self.alpha_filter = 0.4  
+        # raw_output = self.model(torch.tensor([input_data])).squeeze(0).tolist()
+
+        # output = []
+        # for i in range(12):
+        #     smoothed = (self.alpha_filter * raw_output[i]) + ((1.0 - self.alpha_filter) * self.previous_smoothed_output[i])
+        #     output.append(smoothed)
+            
+
+        # self.previous_smoothed_output = output
+        
+    
         self.actions = output
         self.action_buffer.append(output)
 
