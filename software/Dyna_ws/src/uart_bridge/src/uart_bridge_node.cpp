@@ -58,7 +58,9 @@ public:
         boost::system::error_code ec;
         serial_port_.open(port_name, ec);
         if (ec) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to open serial port: %s", ec.message().c_str());
+            RCLCPP_ERROR(this->get_logger(),
+                         "Failed to open serial port %s: %s. The node stays up but nothing will reach the boards",
+                         port_name.c_str(), ec.message().c_str());
             return;
         }
 
@@ -368,6 +370,15 @@ private:
 
     // Writing
     void uart_write_callback(const std::vector<uint8_t>& payload, uint8_t topic_id) {
+        /* Without an open port the frames pile up in the queue and the write
+           handler never runs, so the request would be lost silently. */
+        if (!serial_port_.is_open()) {
+            RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                  "Serial port is closed, dropping request for topic 0x%02X. The boards are not receiving anything",
+                                  topic_id);
+            return;
+        }
+
         uint16_t len = payload.size();
 
         // Frame format

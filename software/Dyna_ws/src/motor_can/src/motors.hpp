@@ -15,6 +15,8 @@
 #include "joint_msgs/msg/odrive_data.hpp"
 // #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <functional>
+#include <algorithm>
+#include <cmath>
 
 class Motors : public rclcpp::Node {
 public:
@@ -38,13 +40,21 @@ private:
     rclcpp::Subscription<joint_msgs::msg::JointEstimates>::SharedPtr subscriber_estimates;
 
     rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr verify_timer_;
     rclcpp::CallbackGroup::SharedPtr client_cb_group_;
     rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
 
+    /* An engaged motor holding position draws current, a disengaged one does not.
+       Anything above this many amps counts as engaged. */
+    float engaged_current;
+    float current_before_engage;
+    bool data_received;
 
     void publish_joints();
     void request(const joint_msgs::msg::Joints::SharedPtr joints);
     void change_state(const std_msgs::msg::Bool::SharedPtr msg);
+    float max_abs_current();
+    void verify_engaged();
     void data_reception(const joint_msgs::msg::JointEstimates::SharedPtr joint);
 };
 
