@@ -71,10 +71,6 @@ Motors::Motors(): Node("brushless_motors")
 
     rrate = 9;
 
-    engaged_current = (float) this->declare_parameter<double>("engaged_current", 0.3);
-    current_before_engage = 0.0;
-    data_received = false;
-
     names[0] = "FRshoulder";
     names[1] = "FRarm";
     names[2] = "FRfoot";
@@ -106,9 +102,7 @@ void Motors::declare_leg_config(const std::string &leg_name)
 }
 
 void Motors::data_reception(const joint_msgs::msg::JointEstimates::SharedPtr joints)
-{
-    data_received = true;
-
+{   
     // FRshoulder
     brushless_motors.find(axisID[0])->second.update_estimates(joints->frshoulder.position,
                                                               joints->frshoulder.velocity);
@@ -193,60 +187,9 @@ void Motors::change_state(const std_msgs::msg::Bool::SharedPtr msg)
     data.brshoulder = msg->data;
     data.brarm = msg->data;
     data.brfoot = msg->data;
-
-    /* The request is fire and forget, so warn when there is nobody on the other
-       end to turn it into a serial frame. */
-    if (publisher_axisstate->get_subscription_count() == 0)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                     "Nobody subscribed to request_axisstate, the uart bridge is not running. Request dropped");
-    }
-
-    current_before_engage = max_abs_current();
-
+    
     publisher_axisstate->publish(data);
-
-    /* Nothing downstream acknowledges the request either, so give the motors a
-       moment and then check whether they are really drawing current. */
-    if (msg->data)
-    {
-        verify_timer_ = create_wall_timer(std::chrono::milliseconds(1000),
-                                          std::bind(&Motors::verify_engaged, this), timer_cb_group_);
-    } else if (verify_timer_) {
-        verify_timer_->cancel();
-    }
-}
-
-float Motors::max_abs_current()
-{
-    float highest = 0.0;
-    for (auto& pair : brushless_motors)
-    {
-        highest = std::max(highest, std::fabs(pair.second.get_current()));
-    }
-    return highest;
-}
-
-void Motors::verify_engaged()
-{
-    verify_timer_->cancel();
-
-    float current = max_abs_current();
-
-    /* Either the motors are holding load now, or at the very least they started
-       drawing more than they did before the request went out. */
-    if (current > engaged_current || (current - current_before_engage) > engaged_current)
-    {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
-                    "Motors engaged, highest current is %.2f A", current);
-    } else if (!data_received) {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                     "Motors did NOT engage: no motor_data has ever arrived, so nothing is coming back from the boards. Check the uart bridge and the serial cable");
-    } else {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                     "Motors did NOT engage: highest current is %.2f A, was %.2f A before the request, expected over %.2f A",
-                     current, current_before_engage, engaged_current);
-    }
+    
 }
 
 void Motors::publish_joints()
